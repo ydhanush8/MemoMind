@@ -221,7 +221,7 @@ export default function WelcomePage() {
             Simple, Transparent Pricing
           </h2>
           <p className="text-xl text-slate-400 mb-12">
-            Start free, upgrade when you're ready
+            Start free, upgrade when you&apos;re ready
           </p>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
