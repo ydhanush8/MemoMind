@@ -14,8 +14,25 @@ declare global {
 export default function PricingPage() {
   const router = useRouter();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
+  const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
   const [isProcessing, setIsProcessing] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<any>(null);
+
+  // Pricing data for both currencies
+  const pricing = {
+    INR: {
+      monthly: 99,
+      yearly: 999,
+      symbol: '₹',
+      yearlyDiscount: 189,
+    },
+    USD: {
+      monthly: 1.99,
+      yearly: 19.99,
+      symbol: '$',
+      yearlyDiscount: 3.89,
+    },
+  };
 
   useEffect(() => {
     checkSubscription();
@@ -45,9 +62,18 @@ export default function PricingPage() {
         body: JSON.stringify({ planType: selectedPlan }),
       });
 
-      if (!response.ok) throw new Error('Failed to create subscription');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        throw new Error(`Failed to create subscription: ${response.status}`);
+      }
 
-      const { subscriptionId, razorpayKeyId } = await response.json();
+      const data = await response.json();
+      const { subscriptionId, razorpayKeyId } = data;
+
+      if (!subscriptionId || !razorpayKeyId) {
+        throw new Error('Invalid response from server');
+      }
 
       const options = {
         key: razorpayKeyId,
@@ -85,7 +111,7 @@ export default function PricingPage() {
       razorpay.open();
     } catch (error) {
       console.error('Payment error:', error);
-      alert('Failed to initiate payment. Please try again.');
+      alert(`Failed to initiate payment: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsProcessing(false);
     }
@@ -144,9 +170,33 @@ export default function PricingPage() {
           <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">
             Upgrade to <span className="text-blue-400">Premium</span>
           </h1>
-          <p className="text-lg sm:text-xl text-slate-400">
+          <p className="text-lg sm:text-xl text-slate-400 mb-6">
             Unlock AI-powered learning and never forget again
           </p>
+          
+          {/* Currency Toggle */}
+          <div className="flex justify-center gap-2 mb-4">
+            <button
+              onClick={() => setCurrency('INR')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all text-sm ${
+                currency === 'INR'
+                  ? 'bg-slate-700 text-white'
+                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50'
+              }`}
+            >
+              🇮🇳 INR (₹)
+            </button>
+            <button
+              onClick={() => setCurrency('USD')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all text-sm ${
+                currency === 'USD'
+                  ? 'bg-slate-700 text-white'
+                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50'
+              }`}
+            >
+              🌎 USD ($)
+            </button>
+          </div>
         </div>
 
         <div className="flex justify-center gap-3 mb-12">
@@ -170,7 +220,7 @@ export default function PricingPage() {
           >
             Yearly
             <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
-              Save ₹189
+              Save {pricing[currency].symbol}{pricing[currency].yearlyDiscount}
             </span>
           </button>
         </div>
@@ -178,7 +228,7 @@ export default function PricingPage() {
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-8">
             <h3 className="text-2xl font-bold text-white mb-2">Free</h3>
-            <div className="text-4xl font-bold text-white mb-6">₹0</div>
+            <div className="text-4xl font-bold text-white mb-6">{pricing[currency].symbol}0</div>
             <ul className="space-y-4 mb-8">
               <li className="flex items-start gap-3 text-slate-300">
                 <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
@@ -214,7 +264,7 @@ export default function PricingPage() {
             <h3 className="text-2xl font-bold text-white mb-2">Premium</h3>
             <div className="mb-6">
               <div className="text-4xl font-bold text-white">
-                {selectedPlan === 'monthly' ? '₹99' : '₹999'}
+                {pricing[currency].symbol}{selectedPlan === 'monthly' ? pricing[currency].monthly : pricing[currency].yearly}
               </div>
               <div className="text-slate-400">
                 {selectedPlan === 'monthly' ? 'per month' : 'per year'}
