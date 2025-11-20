@@ -97,7 +97,7 @@ export default function PaywallModal({ isOpen, onClose }: PaywallModalProps) {
                 clipRule="evenodd"
               />
             </svg>
-            <span>Review Tracking - Never forget what you've learned</span>
+            <span>Review Tracking - Never forget what you&apos;ve learned</span>
           </div>
         </div>
 
