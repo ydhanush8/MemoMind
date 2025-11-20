@@ -162,7 +162,7 @@ export default function WelcomePage() {
               </div>
               <h3 className="text-2xl font-bold text-white mb-3">Daily Practice</h3>
               <p className="text-slate-400 leading-relaxed">
-                Spaced repetition flashcards. Never forget what you've learned with smart reviews.
+                Spaced repetition flashcards. Never forget what you&apos;ve learned with smart reviews.
               </p>
               <span className="inline-block mt-4 bg-green-500/20 text-green-400 text-xs px-3 py-1 rounded-full font-semibold">
                 Premium
