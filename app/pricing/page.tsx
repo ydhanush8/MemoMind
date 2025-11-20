@@ -17,6 +17,7 @@ export default function PricingPage() {
   const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
   const [isProcessing, setIsProcessing] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Pricing data for both currencies
   const pricing = {
@@ -111,7 +112,7 @@ export default function PricingPage() {
       razorpay.open();
     } catch (error) {
       console.error('Payment error:', error);
-      alert(`Failed to initiate payment: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setError(error instanceof Error ? error.message : 'Failed to initiate payment. Please try again.');
     } finally {
       setIsProcessing(false);
     }
@@ -307,6 +308,31 @@ export default function PricingPage() {
           </div>
         </div>
       </div>
+
+      {/* Error Modal */}
+      {error && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 border border-red-500/50 rounded-2xl p-8 max-w-md w-full mx-4 animate-fadeIn">
+            <div className="flex items-start gap-4 mb-6">
+              <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-white mb-2">Payment Error</h3>
+                <p className="text-slate-300">{error}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setError(null)}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-all"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
