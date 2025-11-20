@@ -1,292 +1,160 @@
 # 🧠 MemoMind
 
-**Never forget what you learn.** MemoMind is an AI-powered learning platform that helps you retain knowledge through smart note-taking, AI analysis, and spaced repetition.
-
-[![Next.js](https://img.shields.io/badge/Next.js-15-black)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-green)](https://www.mongodb.com/)
-[![Clerk](https://img.shields.io/badge/Auth-Clerk-purple)](https://clerk.com/)
+**Never forget what you learn.** An AI-powered learning companion that helps you master any topic through smart note-taking, instant feedback, and spaced repetition.
 
 ---
 
-## ✨ Features
+## 🎯 What is MemoMind?
 
-### 🆓 Free Tier
-- **Smart Note-Taking** - Create and organize unlimited learning notes
-- **Beautiful UI** - Modern, responsive design with dark theme
-- **Secure Storage** - Your notes are safely stored in MongoDB
-- **Cross-Device** - Access your notes anywhere
+MemoMind transforms the way you learn by:
 
-### 💎 Premium Tier (₹99/month or ₹999/year)
-- **AI Analysis** - Get instant feedback on your understanding using advanced LLMs
-- **Daily Practice** - Spaced repetition flashcards to reinforce learning
-- **Progress Tracking** - Monitor your learning journey with statistics
-- **Review Challenges** - Daily goals to keep you motivated
+1. **📝 Capturing Your Understanding** - Write what you know in your own words
+2. **🤖 Getting Instant AI Feedback** - See what you got right and what you missed
+3. **🔄 Practicing Until It Sticks** - Daily flashcards ensure you never forget
+4. **� Tracking Your Progress** - Watch your knowledge grow over time
+
+**Perfect for:** Students, professionals learning new skills, anyone preparing for exams or certifications.
 
 ---
 
-## 🛠️ Tech Stack
+## ✨ What Can You Do?
 
-- **Framework:** Next.js 15 (App Router)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS
-- **Authentication:** Clerk
-- **Database:** MongoDB Atlas with Mongoose
-- **Payments:** Razorpay (INR)
-- **AI:** OpenRouter API (multiple models)
-- **Deployment:** Vercel
+### 📚 **Smart Note-Taking** (Free)
+- Create unlimited learning notes on any topic
+- Explain concepts in your own words
+- Organize and review your notes anytime
+- Access from any device
 
----
+### 🎓 **AI-Powered Learning** (Premium - ₹99/month or $1.99/month)
+- **Instant Feedback** - AI analyzes your understanding and shows gaps
+- **Accuracy Scoring** - See how well you grasp each topic (0-100%)
+- **Personalized Tips** - Get suggestions on what to study next
+- **Smart Corrections** - Learn what you missed without judgment
 
-## 🚀 Quick Start
-
-### Prerequisites
-
-- Node.js 18+ and pnpm
-- MongoDB Atlas account
-- Clerk account
-- OpenRouter API key
-- Razorpay account (for payments)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/ydhanush8/MemoMind.git
-   cd MemoMind
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pnpm install
-   ```
-
-3. **Set up environment variables**
-   
-   Create a `.env.local` file in the root directory:
-   ```env
-   # Clerk Authentication
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
-   CLERK_SECRET_KEY=sk_test_xxxxx
-
-   # MongoDB
-   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/memomind
-
-   # OpenRouter AI
-   OPENROUTER_API_KEY=sk-or-v1-xxxxx
-
-   # Razorpay (Optional - for premium features)
-   RAZORPAY_KEY_ID=rzp_test_xxxxx
-   RAZORPAY_KEY_SECRET=xxxxx
-   RAZORPAY_PLAN_ID_MONTHLY=plan_xxxxx
-   RAZORPAY_PLAN_ID_YEARLY=plan_xxxxx
-   ```
-
-4. **Run the development server**
-   ```bash
-   pnpm run dev
-   ```
-
-5. **Open your browser**
-   
-   Navigate to [http://localhost:3000](http://localhost:3000)
+### 🔄 **Daily Practice** (Premium)
+- **Spaced Repetition** - Review notes at optimal intervals
+- **Flip Card Learning** - Test yourself before seeing the answer
+- **Daily Challenges** - Build a learning streak
+- **Progress Tracking** - See how many topics you've mastered
 
 ---
 
-## 🔧 Environment Variables
+## 💡 How It Works
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key | ✅ Yes |
-| `CLERK_SECRET_KEY` | Clerk secret key | ✅ Yes |
-| `MONGODB_URI` | MongoDB connection string | ✅ Yes |
-| `OPENROUTER_API_KEY` | OpenRouter API key for AI features | ✅ Yes |
-| `RAZORPAY_KEY_ID` | Razorpay key ID | ⚠️ Premium only |
-| `RAZORPAY_KEY_SECRET` | Razorpay secret key | ⚠️ Premium only |
-| `RAZORPAY_PLAN_ID_MONTHLY` | Monthly subscription plan ID | ⚠️ Premium only |
-| `RAZORPAY_PLAN_ID_YEARLY` | Yearly subscription plan ID | ⚠️ Premium only |
+### Step 1: Learn Something New
+Read a chapter, watch a tutorial, attend a class - learn in your preferred way.
 
-### Getting API Keys
+### Step 2: Explain It in MemoMind
+Write down what you understood in your own words. No copying - just your explanation.
 
-#### Clerk (Authentication)
-1. Sign up at [clerk.com](https://clerk.com)
-2. Create a new application
-3. Copy your API keys from the dashboard
+### Step 3: Get AI Feedback (Premium)
+Our AI analyzes your explanation and shows:
+- ✅ **What you got right** - Confirm your understanding
+- ⚠️ **What you missed** - Fill knowledge gaps
+- 📈 **Accuracy score** - Track improvement
+- 💡 **Next steps** - What to learn next
 
-#### MongoDB Atlas
-1. Sign up at [mongodb.com](https://www.mongodb.com/cloud/atlas)
-2. Create a free cluster
-3. Get your connection string
-4. Replace `<password>` and `<database>` in the URI
-
-#### OpenRouter (AI)
-1. Sign up at [openrouter.ai](https://openrouter.ai)
-2. Add credits to your account
-3. Generate an API key
-
-#### Razorpay (Payments)
-1. Sign up at [razorpay.com](https://razorpay.com)
-2. Get your test API keys
-3. Create subscription plans for monthly (₹99) and yearly (₹999)
-4. Copy the plan IDs
+### Step 4: Practice Daily
+Review your notes as flashcards. The more you practice, the better you remember.
 
 ---
 
-## 📦 Project Structure
+## � Free vs Premium
 
-```
-MemoMind/
-├── app/
-│   ├── api/              # API routes
-│   │   ├── analyze/      # AI analysis endpoint
-│   │   ├── notes/        # CRUD operations for notes
-│   │   ├── practice/     # Daily practice endpoints
-│   │   └── subscription/ # Payment & subscription management
-│   ├── components/       # Reusable React components
-│   │   ├── AnalysisResult.tsx
-│   │   ├── NoteCard.tsx
-│   │   ├── PaywallModal.tsx
-│   │   └── PracticeCard.tsx
-│   ├── lib/              # Utilities and models
-│   │   ├── models/       # Mongoose schemas
-│   │   ├── mongodb.ts    # Database connection
-│   │   └── types.ts      # TypeScript types
-│   ├── new/              # Create note page
-│   ├── practice/         # Daily practice page
-│   ├── pricing/          # Pricing & payments page
-│   ├── sign-in/          # Clerk sign-in
-│   ├── sign-up/          # Clerk sign-up
-│   ├── welcome/          # Landing page
-│   ├── layout.tsx        # Root layout
-│   ├── page.tsx          # Dashboard
-│   └── globals.css       # Global styles
-├── middleware.ts         # Clerk authentication middleware
-├── next.config.mjs       # Next.js configuration
-├── tailwind.config.ts    # Tailwind CSS configuration
-└── package.json          # Dependencies
-```
+### Free Forever
+- ✅ Unlimited notes
+- ✅ Organize and review
+- ✅ Mobile-friendly interface
+- ✅ Secure cloud storage
+
+### Premium (₹99/month or ₹999/year)
+Everything in Free, **plus:**
+- 🤖 AI-powered analysis
+- 📊 Accuracy scoring
+- 🔄 Daily practice mode
+- 📈 Progress tracking
+- 🎯 Learning analytics
+
+**Try free, upgrade when ready!**
 
 ---
 
-## 🎯 Usage
+## 🌍 Pricing
 
-### Creating a Note
-1. Sign up/Sign in using Clerk authentication
-2. Click **"New Note"** on the dashboard
-3. Enter topic title and your understanding
-4. Click **"Save Note"**
+**India:** ₹99/month or ₹999/year  
+**International:** $1.99/month or $19.99/year
 
-### AI Analysis (Premium)
-1. Create a note
-2. Click **"Analyze with AI"**
-3. Get instant feedback on your understanding
-4. See accuracy score, correct points, and areas to improve
+Cancel anytime. No hidden fees.
 
-### Daily Practice (Premium)
-1. Go to **"Daily Practice"** from dashboard
-2. Review a random note as a flashcard
-3. Try to recall the answer
-4. Flip the card to reveal
-5. Complete daily challenges!
+[**Start Learning Free →**](https://memomind.vercel.app/welcome)
 
 ---
 
-## 🚢 Deployment
+## 🚀 Getting Started
 
-### Deploy to Vercel
+1. **Sign Up** - Free account in 30 seconds
+2. **Create Your First Note** - Explain something you learned today
+3. **Get AI Feedback** (upgrade to premium)
+4. **Practice Daily** - Build your knowledge base
 
-1. **Push to GitHub**
-   ```bash
-   git add .
-   git commit -m "Initial commit"
-   git push origin main
-   ```
-
-2. **Deploy to Vercel**
-   - Go to [vercel.com](https://vercel.com)
-   - Import your GitHub repository
-   - Add all environment variables
-   - Deploy!
-
-3. **Update Clerk URLs**
-   - Add your Vercel domain to Clerk's allowed domains
-   - Update redirect URLs in Clerk dashboard
-
-4. **Set up Razorpay Webhooks** (Optional)
-   - Add webhook URL: `https://yourdomain.vercel.app/api/webhooks/razorpay`
-   - Subscribe to: `subscription.activated`, `subscription.cancelled`, `payment.failed`
+**No credit card required for free tier!**
 
 ---
 
-## 🎨 Features in Detail
+## 🎓 Who Uses MemoMind?
 
-### Smart Note-Taking
-- Create unlimited notes with topic and understanding
-- Edit and delete notes anytime
-- Mobile-responsive card interface
-- Expandable text with "Read more" functionality
-
-### AI Analysis (Premium)
-- Powered by OpenRouter's LLMs
-- Analyzes your understanding accuracy
-- Identifies correct points and gaps
-- Provides comprehensive summaries
-- Suggests next concepts to learn
-
-### Daily Practice (Premium)
-- Spaced repetition algorithm
-- Flip card animations
-- Daily challenge tracking
-- Review statistics
-- Progress monitoring
-
-### Payment Integration
-- Secure Razorpay integration
-- Subscription management
-- Auto-renewal handling
-- Cancel anytime
-- ₹99/month or ₹999/year pricing
+- **Students** - Preparing for exams, learning new subjects
+- **Professionals** - Mastering new skills, certifications
+- **Self-Learners** - Building knowledge in any field
+- **Teachers** - Helping students learn effectively
 
 ---
 
-## 🤝 Contributing
+## 🔒 Your Privacy Matters
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+- All notes are encrypted and private
+- Only you can access your learning data
+- We never sell your information
+- Industry-standard security
 
 ---
 
-## 📝 License
+## � Access Anywhere
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- [Next.js](https://nextjs.org/) - The React framework
-- [Clerk](https://clerk.com/) - Authentication made easy
-- [MongoDB](https://www.mongodb.com/) - Database
-- [OpenRouter](https://openrouter.ai/) - AI model access
-- [Razorpay](https://razorpay.com/) - Payment gateway
-- [Tailwind CSS](https://tailwindcss.com/) - Styling
-- [Vercel](https://vercel.com/) - Deployment platform
+- **Web App** - Works on any browser
+- **Mobile Responsive** - Learn on the go
+- **Cloud Sync** - Access from any device
 
 ---
 
-## 📧 Contact
+## � Have Questions?
 
-**Developer:** Dhanush Sai Reddy  
-**GitHub:** [@ydhanush8](https://github.com/ydhanush8)  
-**Project Link:** [https://github.com/ydhanush8/MemoMind](https://github.com/ydhanush8/MemoMind)
+**Email:** support@memomind.app  
+**GitHub:** [github.com/ydhanush8/MemoMind](https://github.com/ydhanush8/MemoMind)
+
+---
+
+## 🛠️ For Developers
+
+Want to contribute or run your own instance? Check out our:
+- [Setup Guide](SETUP.md) - Installation instructions
+- [Tech Stack](DEVELOPERS.md) - Architecture details
+- [Contributing](CONTRIBUTING.md) - How to help
+
+---
+
+## � License
+
+MIT License - free to use and modify
 
 ---
 
 <div align="center">
-  <strong>Built with ❤️ using Next.js and TypeScript</strong>
+  
+**Start learning smarter today!**
+
+[**Try MemoMind Free →**](https://memomind.vercel.app)
+
+Built with ❤️ for learners worldwide
+
 </div>
