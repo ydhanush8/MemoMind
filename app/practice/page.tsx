@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { UserButton } from '@clerk/nextjs';
 import PracticeCard from '@/app/components/PracticeCard';
 import type { Note } from '@/app/lib/types';
+import { trackPracticeStarted } from '@/app/lib/analytics';
 
 export default function PracticePage() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -22,6 +23,11 @@ export default function PracticePage() {
       if (response.ok) {
         const data = await response.json();
         setNotes(data);
+        
+        // Track practice session start (only if there are notes)
+        if (data.length > 0) {
+          trackPracticeStarted(data[0]._id || data[0].id);
+        }
       }
     } catch (error) {
       console.error('Error loading practice notes:', error);

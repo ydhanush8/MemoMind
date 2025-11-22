@@ -7,6 +7,7 @@ import { UserButton } from '@clerk/nextjs';
 import AnalysisResult from '@/app/components/AnalysisResult';
 import PaywallModal from '@/app/components/PaywallModal';
 import type { AnalysisRequest, AnalysisResponse } from '@/app/lib/types';
+import { trackNoteCreated, trackAIAnalysisUsed } from '@/app/lib/analytics';
 
 export default function NewNotePage() {
   const router = useRouter();
@@ -61,6 +62,11 @@ export default function NewNotePage() {
       });
 
       if (response.ok) {
+        const createdNote = await response.json();
+        
+        // Track note creation
+        trackNoteCreated(createdNote._id || createdNote.id);
+        
         router.push('/dashboard');
       } else {
         alert('Failed to save note. Please try again.');
@@ -109,6 +115,12 @@ export default function NewNotePage() {
 
       const data: AnalysisResponse = await response.json();
       setAnalysis(data);
+
+      // Track AI analysis usage
+      trackAIAnalysisUsed({
+        topic: title.trim(),
+        accuracyScore: data.accuracy_score,
+      });
 
       // Auto-save the note with analysis results to database
       await fetch('/api/notes', {

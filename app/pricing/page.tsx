@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { trackSubscriptionStarted } from '@/app/lib/analytics';
 
 declare global {
   interface Window {
@@ -93,6 +94,13 @@ export default function PricingPage() {
           });
 
           if (verifyResponse.ok) {
+            // Track subscription started
+            trackSubscriptionStarted({
+              planType: selectedPlan,
+              amount: selectedPlan === 'monthly' ? pricing[currency].monthly : pricing[currency].yearly,
+              currency: currency,
+            });
+            
             alert('🎉 Welcome to Premium! AI features are now unlocked!');
             router.push('/');
           } else {
