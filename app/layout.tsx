@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
 import PostHogProvider from './components/PostHogProvider';
 import InstallPWA from './components/InstallPWA';
+import NotificationPermission from './components/NotificationPermission';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -36,6 +37,7 @@ export default function RootLayout({
           <PostHogProvider>
             {children}
             <InstallPWA />
+            <NotificationPermission />
           </PostHogProvider>
         </body>
       </html>
