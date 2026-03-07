@@ -1,37 +1,37 @@
-# 🧠 MemoMind
+# MemoMind
 
 **Never forget what you learn.** An AI-powered learning companion that helps you master any topic through smart note-taking, instant feedback, and spaced repetition.
 
 ---
 
-## 🎯 What is MemoMind?
+## What is MemoMind?
 
 MemoMind transforms the way you learn by:
 
-1. **📝 Capturing Your Understanding** - Write what you know in your own words
-2. **🤖 Getting Instant AI Feedback** - See what you got right and what you missed
-3. **🔄 Practicing Until It Sticks** - Daily flashcards ensure you never forget
-4. **� Tracking Your Progress** - Watch your knowledge grow over time
+1. **Capturing Your Understanding** - Write what you know in your own words
+2. **Getting Instant AI Feedback** - See what you got right and what you missed
+3. **Practicing Until It Sticks** - Daily flashcards ensure you never forget
+4. **Tracking Your Progress** - Watch your knowledge grow over time
 
 **Perfect for:** Students, professionals learning new skills, anyone preparing for exams or certifications.
 
 ---
 
-## ✨ What Can You Do?
+## What Can You Do?
 
-### 📚 **Smart Note-Taking** (Free)
+### **Smart Note-Taking** (Free)
 - Create unlimited learning notes on any topic
 - Explain concepts in your own words
 - Organize and review your notes anytime
 - Access from any device
 
-### 🎓 **AI-Powered Learning** (Premium - ₹99/month or $1.99/month)
+### **AI-Powered Learning** (Premium - ₹99/month or $1.99/month)
 - **Instant Feedback** - AI analyzes your understanding and shows gaps
 - **Accuracy Scoring** - See how well you grasp each topic (0-100%)
 - **Personalized Tips** - Get suggestions on what to study next
 - **Smart Corrections** - Learn what you missed without judgment
 
-### 🔄 **Daily Practice** (Premium)
+### **Daily Practice** (Premium)
 - **Spaced Repetition** - Review notes at optimal intervals
 - **Flip Card Learning** - Test yourself before seeing the answer
 - **Daily Challenges** - Build a learning streak
@@ -39,7 +39,7 @@ MemoMind transforms the way you learn by:
 
 ---
 
-## 💡 How It Works
+## How It Works
 
 ### Step 1: Learn Something New
 Read a chapter, watch a tutorial, attend a class - learn in your preferred way.
@@ -49,37 +49,37 @@ Write down what you understood in your own words. No copying - just your explana
 
 ### Step 3: Get AI Feedback (Premium)
 Our AI analyzes your explanation and shows:
-- ✅ **What you got right** - Confirm your understanding
-- ⚠️ **What you missed** - Fill knowledge gaps
-- 📈 **Accuracy score** - Track improvement
-- 💡 **Next steps** - What to learn next
+- **What you got right** - Confirm your understanding
+- **What you missed** - Fill knowledge gaps
+- **Accuracy score** - Track improvement
+- **Next steps** - What to learn next
 
 ### Step 4: Practice Daily
 Review your notes as flashcards. The more you practice, the better you remember.
 
 ---
 
-## � Free vs Premium
+## Free vs Premium
 
 ### Free Forever
-- ✅ Unlimited notes
-- ✅ Organize and review
-- ✅ Mobile-friendly interface
-- ✅ Secure cloud storage
+- Unlimited notes
+- Organize and review
+- Mobile-friendly interface
+- Secure cloud storage
 
 ### Premium (₹99/month or ₹999/year)
 Everything in Free, **plus:**
-- 🤖 AI-powered analysis
-- 📊 Accuracy scoring
-- 🔄 Daily practice mode
-- 📈 Progress tracking
-- 🎯 Learning analytics
+- AI-powered analysis
+- Accuracy scoring
+- Daily practice mode
+- Progress tracking
+- Learning analytics
 
 **Try free, upgrade when ready!**
 
 ---
 
-## 🌍 Pricing
+## Pricing
 
 **India:** ₹99/month or ₹999/year  
 **International:** $1.99/month or $19.99/year
@@ -90,7 +90,7 @@ Cancel anytime. No hidden fees.
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 1. **Sign Up** - Free account in 30 seconds
 2. **Create Your First Note** - Explain something you learned today
@@ -101,7 +101,7 @@ Cancel anytime. No hidden fees.
 
 ---
 
-## 🎓 Who Uses MemoMind?
+## Who Uses MemoMind?
 
 - **Students** - Preparing for exams, learning new subjects
 - **Professionals** - Mastering new skills, certifications
@@ -110,7 +110,7 @@ Cancel anytime. No hidden fees.
 
 ---
 
-## 🔒 Your Privacy Matters
+## Your Privacy Matters
 
 - All notes are encrypted and private
 - Only you can access your learning data
@@ -119,7 +119,7 @@ Cancel anytime. No hidden fees.
 
 ---
 
-## � Access Anywhere
+## Access Anywhere
 
 - **Web App** - Works on any browser
 - **Mobile Responsive** - Learn on the go
@@ -127,14 +127,13 @@ Cancel anytime. No hidden fees.
 
 ---
 
-## � Have Questions?
+## Have Questions?
 
-**Email:** support@memomind.app  
 **GitHub:** [github.com/ydhanush8/MemoMind](https://github.com/ydhanush8/MemoMind)
 
 ---
 
-## 🛠️ For Developers
+## For Developers
 
 Want to contribute or run your own instance? Check out our:
 - [Setup Guide](SETUP.md) - Installation instructions
@@ -143,18 +142,8 @@ Want to contribute or run your own instance? Check out our:
 
 ---
 
-## � License
+## License
 
 MIT License - free to use and modify
 
 ---
-
-<div align="center">
-  
-**Start learning smarter today!**
-
-[**Try MemoMind Free →**](https://memomind.vercel.app)
-
-Built with ❤️ for learners worldwide
-
-</div>
