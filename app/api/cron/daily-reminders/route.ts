@@ -42,17 +42,8 @@ export async function GET(request: NextRequest) {
     const currentHour = today.getUTCHours();
     today.setHours(0, 0, 0, 0);
 
-    // Determine message based on time of day
-    // 3:30 AM UTC = 9:00 AM IST (Morning)
-    // 1:30 PM UTC = 7:00 PM IST (Evening)
-    const isMorning = currentHour < 12;
-    
-    const notificationTitle = isMorning 
-      ? "☀️ Good Morning! Ready to Learn?" 
-      : "📚 Daily Practice Reminder";
-    const notificationBody = isMorning
-      ? "Kickstart your day with a quick 5-min review! 🧠"
-      : "Don't break your streak! Quick 5-min review keeps your memory sharp 🔥";
+    const notificationTitle = "☀️ Good Morning! Ready to Learn?";
+    const notificationBody = "Kickstart your day with a quick 5-min review! 🧠";
 
     const notificationResults = [];
 
