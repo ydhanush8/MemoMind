@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { trackSubscriptionStarted } from '@/app/lib/analytics';
+import { toast } from 'react-hot-toast';
 
 declare global {
   interface Window {
@@ -101,10 +102,10 @@ export default function PricingPage() {
               currency: currency,
             });
             
-            alert('🎉 Welcome to Premium! AI features are now unlocked!');
+            toast.success('🎉 Welcome to Premium! AI features are now unlocked!');
             router.push('/');
           } else {
-            alert('Payment verification failed. Please contact support.');
+            toast.error('Payment verification failed. Please contact support.');
           }
         },
         prefill: {

@@ -8,6 +8,7 @@ import AnalysisResult from '@/app/components/AnalysisResult';
 import PaywallModal from '@/app/components/PaywallModal';
 import type { AnalysisRequest, AnalysisResponse } from '@/app/lib/types';
 import { trackNoteCreated, trackAIAnalysisUsed } from '@/app/lib/analytics';
+import { toast } from 'react-hot-toast';
 
 export default function NewNotePage() {
   const router = useRouter();
@@ -43,7 +44,7 @@ export default function NewNotePage() {
 
     // Validation
     if (!title.trim() || !understanding.trim()) {
-      alert('Please fill in both fields');
+      toast.error('Please fill in both fields');
       return;
     }
 
@@ -67,12 +68,13 @@ export default function NewNotePage() {
         // Track note creation
         trackNoteCreated(createdNote._id || createdNote.id);
         
+        toast.success('Note saved successfully! 🎉');
         router.push('/dashboard');
       } else {
-        alert('Failed to save note. Please try again.');
+        toast.error('Failed to save note. Please try again.');
       }
     } catch (err) {
-      alert('Failed to save note. Please try again.');
+      toast.error('Failed to save note. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -86,7 +88,7 @@ export default function NewNotePage() {
 
     // Validation
     if (!title.trim() || !understanding.trim()) {
-      alert('Please fill in both fields before analyzing');
+      toast.error('Please fill in both fields before analyzing');
       return;
     }
 
@@ -140,7 +142,7 @@ export default function NewNotePage() {
 
       // Redirect to dashboard after showing success message
       setTimeout(() => {
-        router.push('/');
+        router.push('/dashboard');
       }, 2000);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Something went wrong');
@@ -159,7 +161,7 @@ export default function NewNotePage() {
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4">
             <Link
-              href="/"
+              href="/dashboard"
               className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-medium transition-colors text-sm sm:text-base"
             >
               <svg
@@ -247,7 +249,7 @@ export default function NewNotePage() {
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
                 type="submit"
-                disabled={isLoading || isSaved}
+                disabled={isSaving || isAnalyzing || isSaved}
                 className="flex-1 inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 text-white font-semibold px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg transition-all shadow-lg shadow-blue-900/50 disabled:shadow-none text-sm sm:text-base"
               >
                 {isSaved ? (
@@ -290,7 +292,7 @@ export default function NewNotePage() {
               <button
                 type="button"
                 onClick={handleAnalyze}
-                disabled={isAnalyzing || !title || !understanding || isSaved}
+                disabled={isSaving || isAnalyzing || !title || !understanding || isSaved}
                 className="flex-1 inline-flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white font-semibold px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg transition-all shadow-lg shadow-purple-900/50 disabled:shadow-none text-sm sm:text-base relative"
               >
                 {isAnalyzing ? (

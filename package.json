@@ -19,12 +19,16 @@
     "razorpay": "^2.9.6",
     "react": "^18",
     "react-dom": "^18",
+    "react-hot-toast": "^2.6.0",
     "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@babel/core": "^7.26.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/web-push": "^3.6.4",
+    "babel-loader": "^9.2.1",
     "eslint": "^8",
     "eslint-config-next": "15",
     "eslint-config-prettier": "^9.1.0",

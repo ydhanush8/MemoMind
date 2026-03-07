@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
+import { toast } from 'react-hot-toast';
 
 export default function NotificationPermission() {
   const { user } = useUser();
@@ -10,8 +11,20 @@ export default function NotificationPermission() {
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
+    // Check if user has already interacted in this session
+    const hasInteracted = sessionStorage.getItem('memoMind_notification_prompt_hidden');
+    if (hasInteracted === 'true') {
+      setShowPrompt(false);
+      setChecking(false);
+      return;
+    }
     checkSubscriptionStatus();
   }, [user]);
+
+  const hidePromptPermanently = () => {
+    sessionStorage.setItem('memoMind_notification_prompt_hidden', 'true');
+    setShowPrompt(false);
+  };
 
   const checkSubscriptionStatus = async () => {
     if (!user) {
@@ -20,18 +33,22 @@ export default function NotificationPermission() {
     }
 
     try {
-      // Check if already subscribed
       const response = await fetch('/api/notifications/subscribe');
+      if (!response.ok) throw new Error('API failed');
+
       const data = await response.json();
       
       if (data.subscribed) {
         setSubscribed(true);
         setShowPrompt(false);
       } else {
-        // Only show prompt after 10 seconds (don't overwhelm user)
+        // Only show prompt after 5 seconds if not already hidden
         setTimeout(() => {
-          setShowPrompt(true);
-        }, 10000);
+          const stillHidden = sessionStorage.getItem('memoMind_notification_prompt_hidden');
+          if (stillHidden !== 'true') {
+            setShowPrompt(true);
+          }
+        }, 5000);
       }
     } catch (error) {
       console.error('Error checking subscription:', error);
@@ -42,31 +59,28 @@ export default function NotificationPermission() {
 
   const requestPermission = async () => {
     try {
-      // Check if browser supports notifications
       if (!('Notification' in window)) {
-        alert('Your browser does not support notifications');
+        toast.error('Your browser does not support notifications');
+        hidePromptPermanently();
         return;
       }
 
-      // Check if service worker is supported
       if (!('serviceWorker' in navigator)) {
-        alert('Service Worker not supported');
+        toast.error('Service Worker not supported');
+        hidePromptPermanently();
         return;
       }
 
-      // Request permission
       const permission = await Notification.requestPermission();
       
       if (permission !== 'granted') {
-        alert('Notification permission denied. You can enable it later in settings.');
-        setShowPrompt(false);
+        toast.error('Notification permission denied. You can enable it later in settings.');
+        hidePromptPermanently();
         return;
       }
 
-      // Wait for service worker to be ready
       const registration = await navigator.serviceWorker.ready;
 
-      // Subscribe to push notifications
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(
@@ -74,7 +88,6 @@ export default function NotificationPermission() {
         ),
       });
 
-      // Send subscription to backend
       const response = await fetch('/api/notifications/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -83,17 +96,21 @@ export default function NotificationPermission() {
 
       if (response.ok) {
         setSubscribed(true);
-        setShowPrompt(false);
+        hidePromptPermanently();
         
-        // Show success notification
-        new Notification('MemoMind Notifications Enabled!', {
+        // Use registration.showNotification for better reliability
+        registration.showNotification('MemoMind Notifications Enabled!', {
           body: "We'll remind you about your daily practice 🎉",
           icon: '/icon-192x192.png',
+          badge: '/icon-192x192.png',
         });
+      } else {
+        throw new Error('Server returned error');
       }
     } catch (error) {
       console.error('Error subscribing to notifications:', error);
-      alert('Failed to enable notifications. Please try again.');
+      toast.error('Failed to enable notifications. Please try again.');
+      hidePromptPermanently(); 
     }
   };
 
@@ -104,7 +121,7 @@ export default function NotificationPermission() {
   return (
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-md bg-slate-800 border border-blue-500 rounded-lg p-4 shadow-lg z-50 animate-fadeIn">
       <button
-        onClick={() => setShowPrompt(false)}
+        onClick={hidePromptPermanently}
         className="absolute top-2 right-2 text-slate-400 hover:text-white"
       >
         ✕
@@ -132,7 +149,7 @@ export default function NotificationPermission() {
           Enable
         </button>
         <button
-          onClick={() => setShowPrompt(false)}
+          onClick={hidePromptPermanently}
           className="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg transition-all"
         >
           Later

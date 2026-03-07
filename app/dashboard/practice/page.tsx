@@ -6,6 +6,7 @@ import { UserButton } from '@clerk/nextjs';
 import PracticeCard from '@/app/components/PracticeCard';
 import type { Note } from '@/app/lib/types';
 import { trackPracticeStarted } from '@/app/lib/analytics';
+import { toast } from 'react-hot-toast';
 
 export default function PracticePage() {
   const [notes, setNotes] = useState<Note[]>([]);
@@ -43,8 +44,10 @@ export default function PracticePage() {
         method: 'PATCH',
       });
       setReviewedNotes((prev) => new Set([...prev, noteId]));
+      toast.success('Excellent! Note reviewed. 🧠');
     } catch (error) {
       console.error('Error updating review stats:', error);
+      toast.error('Failed to update review status');
     }
   };
 
@@ -66,7 +69,7 @@ export default function PracticePage() {
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 mb-4">
             <Link
-              href="/"
+              href="/dashboard"
               className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-medium transition-colors text-sm sm:text-base"
             >
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -119,7 +122,7 @@ export default function PracticePage() {
                 practice.
               </p>
               <Link
-                href="/"
+                href="/dashboard"
                 className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-all shadow-lg shadow-blue-900/50"
               >
                 Back to Dashboard
@@ -170,7 +173,7 @@ export default function PracticePage() {
 
               {currentIndex === notes.length - 1 ? (
                 <Link
-                  href="/"
+                  href="/dashboard"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg transition-all shadow-lg shadow-green-900/50 text-sm sm:text-base"
                 >
                   <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
