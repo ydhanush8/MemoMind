@@ -2,11 +2,31 @@
 
 import { useEffect, useState } from 'react';
 
+const DISMISSED_KEY = 'memoMind_install_dismissed_until';
+const COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+
+function isDismissed(): boolean {
+  try {
+    const until = localStorage.getItem(DISMISSED_KEY);
+    return until ? Date.now() < parseInt(until, 10) : false;
+  } catch {
+    return false;
+  }
+}
+
+function dismiss() {
+  try {
+    localStorage.setItem(DISMISSED_KEY, String(Date.now() + COOLDOWN_MS));
+  } catch {}
+}
+
 export default function InstallPWA() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
   useEffect(() => {
+    if (isDismissed()) return;
+
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -14,29 +34,33 @@ export default function InstallPWA() {
     };
 
     window.addEventListener('beforeinstallprompt', handler);
-
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
-
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-
     if (outcome === 'accepted') {
       setDeferredPrompt(null);
       setShowInstallPrompt(false);
     }
   };
 
+  const handleLater = () => {
+    dismiss();
+    setShowInstallPrompt(false);
+  };
+
   if (!showInstallPrompt) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm bg-slate-800 border border-blue-500 rounded-lg p-4 shadow-lg z-50 animate-fadeIn">
+    // Offset above NotificationPermission (bottom-28 on mobile so they don't overlap)
+    <div className="fixed bottom-28 sm:bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm bg-slate-800 border border-blue-500 rounded-lg p-4 shadow-lg z-50 animate-fadeIn">
       <button
-        onClick={() => setShowInstallPrompt(false)}
+        onClick={handleLater}
         className="absolute top-2 right-2 text-slate-400 hover:text-white"
+        aria-label="Dismiss"
       >
         ✕
       </button>
@@ -48,9 +72,7 @@ export default function InstallPWA() {
         </div>
         <div className="flex-1">
           <h3 className="text-white font-semibold mb-1">📱 Install MemoMind</h3>
-          <p className="text-slate-300 text-sm">
-            Add to your home screen for quick access and offline use!
-          </p>
+          <p className="text-slate-300 text-sm">Add to your home screen for quick access!</p>
         </div>
       </div>
       <div className="flex gap-2">
@@ -61,7 +83,7 @@ export default function InstallPWA() {
           Install
         </button>
         <button
-          onClick={() => setShowInstallPrompt(false)}
+          onClick={handleLater}
           className="bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2 px-4 rounded-lg transition-all"
         >
           Later

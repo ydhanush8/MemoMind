@@ -2,50 +2,51 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import connectDB from '@/app/lib/mongodb';
 import Note from '@/app/lib/models/Note';
+import { isUserPremium } from '@/app/lib/checkPremium';
 
-// GET /api/practice/daily - Get 2-5 random notes for daily practice
+function fisherYatesShuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 export async function GET() {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     await connectDB();
 
-    // Get today's date at midnight
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const premium = await isUserPremium(userId);
+    if (!premium) {
+      return NextResponse.json({ error: 'Premium subscription required' }, { status: 403 });
+    }
 
-    // Find notes that haven't been reviewed today
-    const candidateNotes = await Note.find({
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    const candidates = await Note.find({
       userId,
-      $or: [
-        { lastReviewedAt: { $lt: today } }, // Reviewed before today
-        { lastReviewedAt: null }, // Never reviewed
-      ],
+      $or: [{ lastReviewedAt: { $lt: today } }, { lastReviewedAt: null }],
     })
-      .sort({ lastReviewedAt: 1 }) // Oldest first (or null first)
-      .limit(10) // Get top 10 candidates
+      .select('title understanding analysis lastReviewedAt reviewCount createdAt updatedAt')
+      .sort({ lastReviewedAt: 1 })
+      .limit(10)
       .lean();
 
-    // If no notes available
-    if (candidateNotes.length === 0) {
+    if (candidates.length === 0) {
       return NextResponse.json([]);
     }
 
-    // Randomly select 2-5 notes from candidates
-    const count = Math.min(
-      Math.max(2, Math.floor(Math.random() * 4) + 2), // Random between 2-5
-      candidateNotes.length,
-    );
+    const shuffled = fisherYatesShuffle(candidates);
+    const count = Math.min(Math.max(2, Math.ceil(Math.random() * 4) + 1), shuffled.length);
 
-    // Shuffle and take the first 'count' notes
-    const shuffled = candidateNotes.sort(() => Math.random() - 0.5);
-    const selectedNotes = shuffled.slice(0, count);
-
-    return NextResponse.json(selectedNotes);
+    return NextResponse.json(shuffled.slice(0, count));
   } catch (error) {
     console.error('Error fetching daily practice notes:', error);
     return NextResponse.json({ error: 'Failed to fetch practice notes' }, { status: 500 });

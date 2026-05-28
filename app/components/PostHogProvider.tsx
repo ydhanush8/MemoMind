@@ -3,28 +3,24 @@
 import { useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { identifyUser, resetUser } from '@/app/lib/analytics';
+import { useSubscription } from '@/app/hooks/useSubscription';
 
-/**
- * PostHog Provider - Identifies users with Clerk
- * Add this to your root layout
- */
 export default function PostHogProvider({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useUser();
+  const { data: subscription } = useSubscription();
 
   useEffect(() => {
-    if (isLoaded) {
-      if (user) {
-        // User is signed in - identify them
-        identifyUser(user.id, {
-          isPremium: false, // Will be updated when subscription status is checked
-          createdAt: user.createdAt ? new Date(user.createdAt) : undefined,
-        });
-      } else {
-        // User is signed out - reset
-        resetUser();
-      }
+    if (!isLoaded) return;
+
+    if (user) {
+      identifyUser(user.id, {
+        isPremium: subscription?.isPremium ?? false,
+        createdAt: user.createdAt ? new Date(user.createdAt) : undefined,
+      });
+    } else {
+      resetUser();
     }
-  }, [user, isLoaded]);
+  }, [user, isLoaded, subscription?.isPremium]);
 
   return <>{children}</>;
 }

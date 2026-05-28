@@ -5,95 +5,129 @@ import Subscription from '@/app/lib/models/Subscription';
 import Note from '@/app/lib/models/Note';
 import webpush from 'web-push';
 
-// Initialize web-push
-webpush.setVapidDetails(
-  `mailto:${process.env.VAPID_EMAIL}`,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+const NOTIFICATION_TITLE = '☀️ Good Morning! Ready to Learn?';
+const NOTIFICATION_BODY = 'Kickstart your day with a quick 5-min review! 🧠';
+const BATCH_SIZE = 50;
+
+function initWebPush() {
+  const email = process.env.VAPID_EMAIL;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+
+  if (!email || !publicKey || !privateKey) {
+    throw new Error('VAPID credentials are not configured');
+  }
+
+  webpush.setVapidDetails(`mailto:${email}`, publicKey, privateKey);
+}
 
 export async function GET(request: NextRequest) {
-  try {
-    // Basic protection using a secret header (Vercel Cron provides this)
+  // Production: require CRON_SECRET always
+  if (process.env.NODE_ENV === 'production') {
     const authHeader = request.headers.get('authorization');
-    if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      // Allow manual triggering only for development/testing if no secret is set
-       if (process.env.NODE_ENV === 'production') {
-         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-       }
+    const secret = process.env.CRON_SECRET;
+    if (!secret || authHeader !== `Bearer ${secret}`) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    await connectDB();
-
-    // 1. Get all premium subscriptions that are active
-    const premiumSubscriptions = await Subscription.find({
-      plan: 'premium',
-      status: 'active',
-    });
-
-    const userIds = premiumSubscriptions.map(s => s.userId);
-
-    if (userIds.length === 0) {
-      return NextResponse.json({ message: 'No premium users to notify' });
-    }
-
-    // For each premium user, check if they've practiced today
-    const today = new Date();
-    const currentHour = today.getUTCHours();
-    today.setHours(0, 0, 0, 0);
-
-    const notificationTitle = "☀️ Good Morning! Ready to Learn?";
-    const notificationBody = "Kickstart your day with a quick 5-min review! 🧠";
-
-    const notificationResults = [];
-
-    for (const userId of userIds) {
-      // Check for notes reviewed today
-      const reviewedToday = await Note.countDocuments({
-        userId,
-        lastReviewedAt: { $gte: today },
-      });
-
-      // If they haven't practiced (reviewed at least 2 notes), send a reminder
-      if (reviewedToday < 2) {
-        const pushSub = await PushSubscription.findOne({ userId, enabled: true });
-
-        if (pushSub && pushSub.subscription) {
-          try {
-            const payload = JSON.stringify({
-              title: notificationTitle,
-              body: notificationBody,
-              url: "/practice",
-              icon: "/icon-192x192.png",
-              badge: "/icon-192x192.png",
-            });
-
-            await webpush.sendNotification(pushSub.subscription, payload);
-            notificationResults.push({ userId, status: 'sent' });
-          } catch (error: any) {
-            console.error(`Error sending to user ${userId}:`, error);
-            if (error.statusCode === 410 || error.statusCode === 404) {
-              await PushSubscription.deleteOne({ userId });
-              notificationResults.push({ userId, status: 'removed' });
-            } else {
-              notificationResults.push({ userId, status: 'failed', error: error.message });
-            }
-          }
-        } else {
-          notificationResults.push({ userId, status: 'not_subscribed' });
-        }
-      } else {
-        notificationResults.push({ userId, status: 'already_practiced' });
-      }
-    }
-
-    return NextResponse.json({
-      success: true,
-      processed: notificationResults.length,
-      results: notificationResults,
-    });
-  } catch (error) {
-    console.error('Cron job internal error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
+
+  try {
+    initWebPush();
+  } catch (err) {
+    console.error('VAPID init failed:', err);
+    return NextResponse.json({ error: 'Push service not configured' }, { status: 500 });
+  }
+
+  await connectDB();
+
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0); // Use UTC midnight for consistency
+
+  // 1. Batch-fetch all active premium user IDs
+  const premiumSubs = await Subscription.find(
+    { plan: 'premium', status: 'active' },
+    { userId: 1 }
+  ).lean();
+
+  if (premiumSubs.length === 0) {
+    return NextResponse.json({ message: 'No premium users to notify', processed: 0 });
+  }
+
+  const userIds = premiumSubs.map((s) => s.userId as string);
+
+  // 2. Batch-fetch users who already reviewed 2+ notes today
+  const reviewedAgg = await Note.aggregate([
+    { $match: { userId: { $in: userIds }, lastReviewedAt: { $gte: today } } },
+    { $group: { _id: '$userId', count: { $sum: 1 } } },
+    { $match: { count: { $gte: 2 } } },
+  ]);
+  const alreadyReviewed = new Set(reviewedAgg.map((r) => r._id as string));
+
+  // 3. Filter to users who still need reminders
+  const needsReminder = userIds.filter((uid) => !alreadyReviewed.has(uid));
+
+  if (needsReminder.length === 0) {
+    return NextResponse.json({ message: 'All users already practiced today', processed: 0 });
+  }
+
+  // 4. Batch-fetch push subscriptions for those users
+  const pushSubs = await PushSubscription.find(
+    { userId: { $in: needsReminder }, enabled: true },
+    { userId: 1, subscription: 1 }
+  ).lean();
+
+  const subMap = new Map(pushSubs.map((ps) => [ps.userId as string, ps.subscription]));
+
+  const payload = JSON.stringify({
+    title: NOTIFICATION_TITLE,
+    body: NOTIFICATION_BODY,
+    url: '/dashboard/practice',
+    icon: '/icon-192x192.png',
+    badge: '/icon-192x192.png',
+  });
+
+  // 5. Send notifications in parallel batches (queue pattern — avoids Vercel timeout)
+  const results: { userId: string; status: string; error?: string }[] = [];
+  const expiredUserIds: string[] = [];
+
+  for (let i = 0; i < needsReminder.length; i += BATCH_SIZE) {
+    const batch = needsReminder.slice(i, i + BATCH_SIZE);
+
+    const batchResults = await Promise.allSettled(
+      batch.map(async (userId) => {
+        const sub = subMap.get(userId);
+        if (!sub) return { userId, status: 'not_subscribed' };
+
+        try {
+          await webpush.sendNotification(sub as webpush.PushSubscription, payload);
+          return { userId, status: 'sent' };
+        } catch (err: unknown) {
+          const status = (err as { statusCode?: number }).statusCode;
+          if (status === 410 || status === 404) {
+            expiredUserIds.push(userId);
+            return { userId, status: 'expired' };
+          }
+          return { userId, status: 'failed', error: (err as Error).message };
+        }
+      })
+    );
+
+    for (const r of batchResults) {
+      if (r.status === 'fulfilled') results.push(r.value);
+    }
+  }
+
+  // 6. Clean up expired subscriptions in bulk
+  if (expiredUserIds.length > 0) {
+    await PushSubscription.deleteMany({ userId: { $in: expiredUserIds } });
+  }
+
+  return NextResponse.json({
+    success: true,
+    processed: results.length,
+    sent: results.filter((r) => r.status === 'sent').length,
+    skipped: results.filter((r) => r.status === 'not_subscribed').length,
+    expired: expiredUserIds.length,
+    failed: results.filter((r) => r.status === 'failed').length,
+  });
 }

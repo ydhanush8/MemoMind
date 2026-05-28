@@ -2,7 +2,8 @@
   "name": "MemoMind - AI Learning Tracker",
   "short_name": "MemoMind",
   "description": "Never forget what you learn. AI-powered learning notes with spaced repetition.",
-  "start_url": "/",
+  "start_url": "/dashboard",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#3b82f6",
@@ -39,15 +40,24 @@
       "name": "Create Note",
       "short_name": "New Note",
       "description": "Create a new learning note",
-      "url": "/new",
+      "url": "/dashboard/new",
       "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
     },
     {
       "name": "Practice",
       "short_name": "Practice",
       "description": "Start daily practice",
-      "url": "/practice",
+      "url": "/dashboard/practice",
       "icons": [{ "src": "/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "MemoMind Dashboard"
     }
   ]
 }

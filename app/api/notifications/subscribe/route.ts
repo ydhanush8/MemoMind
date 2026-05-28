@@ -4,37 +4,33 @@ import connectDB from '@/app/lib/mongodb';
 import PushSubscription from '@/app/lib/models/PushSubscription';
 
 export async function POST(request: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  let subscription: { endpoint?: string };
   try {
-    const { userId } = await auth();
+    subscription = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  if (!subscription?.endpoint) {
+    return NextResponse.json({ error: 'Invalid push subscription object' }, { status: 400 });
+  }
 
-    const subscription = await request.json();
-
-    if (!subscription || !subscription.endpoint) {
-      return NextResponse.json({ error: 'Invalid subscription' }, { status: 400 });
-    }
-
+  try {
     await connectDB();
-
-    // Create or update subscription
-    const pushSubscription = await PushSubscription.findOneAndUpdate(
+    const record = await PushSubscription.findOneAndUpdate(
       { userId },
-      {
-        userId,
-        subscription,
-        enabled: true,
-        updatedAt: new Date(),
-      },
+      { userId, subscription, enabled: true, updatedAt: new Date() },
       { upsert: true, new: true }
     );
-
-    return NextResponse.json({ 
-      success: true, 
-      message: 'Subscription saved successfully',
-      subscriptionId: pushSubscription._id 
+    return NextResponse.json({
+      success: true,
+      message: 'Subscription saved',
+      subscriptionId: record._id,
     });
   } catch (error) {
     console.error('Error saving push subscription:', error);
@@ -42,28 +38,23 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Get current subscription status
 export async function GET() {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     await connectDB();
-
-    const subscription = await PushSubscription.findOne({ userId });
-
-    if (!subscription) {
+    const record = await PushSubscription.findOne({ userId });
+    if (!record) {
       return NextResponse.json({ subscribed: false });
     }
-
     return NextResponse.json({
       subscribed: true,
-      enabled: subscription.enabled,
-      preferredTime: subscription.preferredTime,
-      notificationTypes: subscription.notificationTypes,
+      enabled: record.enabled,
+      preferredTime: record.preferredTime,
+      notificationTypes: record.notificationTypes,
     });
   } catch (error) {
     console.error('Error fetching subscription:', error);
@@ -71,19 +62,45 @@ export async function GET() {
   }
 }
 
-// Delete subscription
-export async function DELETE() {
+export async function PATCH(request: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  let body: { preferredTime?: string; enabled?: boolean };
   try {
-    const { userId } = await auth();
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  const update: Record<string, unknown> = { updatedAt: new Date() };
+  if (typeof body.preferredTime === 'string') update.preferredTime = body.preferredTime;
+  if (typeof body.enabled === 'boolean') update.enabled = body.enabled;
 
+  try {
     await connectDB();
+    const record = await PushSubscription.findOneAndUpdate({ userId }, update, { new: true });
+    if (!record) {
+      return NextResponse.json({ error: 'No subscription found' }, { status: 404 });
+    }
+    return NextResponse.json({ success: true, preferredTime: record.preferredTime });
+  } catch (error) {
+    console.error('Error updating preferences:', error);
+    return NextResponse.json({ error: 'Failed to update preferences' }, { status: 500 });
+  }
+}
 
+export async function DELETE() {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    await connectDB();
     await PushSubscription.deleteOne({ userId });
-
     return NextResponse.json({ success: true, message: 'Subscription removed' });
   } catch (error) {
     console.error('Error deleting subscription:', error);
