@@ -4,6 +4,7 @@ import PostHogProvider from './components/PostHogProvider';
 import InstallPWA from './components/InstallPWA';
 import NotificationPermission from './components/NotificationPermission';
 import Providers from './providers';
+import ErrorBoundary from './components/ErrorBoundary';
 import { Toaster } from 'react-hot-toast';
 import './globals.css';
 
@@ -39,7 +40,9 @@ export default function RootLayout({
         <body className="antialiased">
           <Providers>
             <PostHogProvider>
+              <ErrorBoundary>
               {children}
+              </ErrorBoundary>
               <InstallPWA />
               <NotificationPermission />
               <Toaster

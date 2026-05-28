@@ -4,30 +4,23 @@ import connectDB from '@/app/lib/mongodb';
 import Subscription from '@/app/lib/models/Subscription';
 
 export async function GET() {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     await connectDB();
 
     let subscription = await Subscription.findOne({ userId });
 
     if (!subscription) {
-      subscription = await Subscription.create({
-        userId,
-        plan: 'free',
-        status: 'active',
-      });
+      subscription = await Subscription.create({ userId, plan: 'free', status: 'active' });
     }
 
-    const now = new Date();
     const isPremium =
       subscription.plan === 'premium' &&
-      subscription.status === 'active' &&
-      (!subscription.currentPeriodEnd || subscription.currentPeriodEnd > now);
+      subscription.status === 'active';
 
     return NextResponse.json({
       isPremium,

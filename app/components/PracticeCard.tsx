@@ -11,22 +11,22 @@ interface PracticeCardProps {
 
 export default function PracticeCard({ note, onReviewed }: PracticeCardProps) {
   const [isFlipped, setIsFlipped] = useState(false);
-  const [hasReviewed, setHasReviewed] = useState(false);
+  // useRef so the flag updates synchronously — state updater double-invocation in
+  // React 18 Strict Mode would fire onReviewed twice if this were useState.
+  const hasReviewedRef = React.useRef(false);
 
   useEffect(() => {
     setIsFlipped(false);
-    setHasReviewed(false);
+    hasReviewedRef.current = false;
   }, [note]);
 
   const handleFlip = () => {
-    setIsFlipped((prev) => {
-      const next = !prev;
-      if (next && !hasReviewed) {
-        setHasReviewed(true);
-        onReviewed(note._id);
-      }
-      return next;
-    });
+    const next = !isFlipped;
+    setIsFlipped(next);
+    if (next && !hasReviewedRef.current) {
+      hasReviewedRef.current = true;
+      onReviewed(note._id);
+    }
   };
 
   return (

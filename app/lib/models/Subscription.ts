@@ -19,7 +19,8 @@ const subscriptionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['active', 'cancelled', 'expired'],
+      // 'pending_payment' = subscription created on Razorpay, user hasn't paid yet / verify failed
+      enum: ['active', 'cancelled', 'expired', 'pending_payment'],
       default: 'active',
     },
     razorpaySubscriptionId: {
@@ -30,6 +31,10 @@ const subscriptionSchema = new mongoose.Schema(
       type: String,
       sparse: true,
     },
+    pendingPlanType: {
+      type: String,
+      enum: ['monthly', 'yearly'],
+    },
     currentPeriodStart: {
       type: Date,
     },
@@ -39,7 +44,7 @@ const subscriptionSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  },
+  }
 );
 
 const Subscription =

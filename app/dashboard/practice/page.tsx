@@ -2,19 +2,32 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
 import PracticeCard from '@/app/components/PracticeCard';
 import { trackPracticeStarted } from '@/app/lib/analytics';
 import { toast } from 'react-hot-toast';
 import { usePracticeNotes } from '@/app/hooks/usePractice';
 import { useMarkReviewed } from '@/app/hooks/useNotes';
+import { useSubscription } from '@/app/hooks/useSubscription';
 
 export default function PracticePage() {
+  const router = useRouter();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [reviewedNoteIds, setReviewedNoteIds] = useState<Set<string>>(new Set());
 
-  const { data: notes = [], isLoading } = usePracticeNotes();
+  const { data: subscription, isLoading: subLoading } = useSubscription();
+  const { data: notes = [], isLoading: notesLoading } = usePracticeNotes();
   const markReviewed = useMarkReviewed();
+
+  const isLoading = subLoading || notesLoading;
+
+  // Redirect free users who navigate directly to this URL
+  React.useEffect(() => {
+    if (!subLoading && subscription && !subscription.isPremium) {
+      router.replace('/dashboard');
+    }
+  }, [subscription, subLoading, router]);
 
   // Track start when notes load for the first time
   React.useEffect(() => {
@@ -24,12 +37,19 @@ export default function PracticePage() {
   }, [notes.length]);
 
   const handleReviewed = async (noteId: string) => {
-    if (reviewedNoteIds.has(noteId)) return; // Already reviewed this card
+    if (reviewedNoteIds.has(noteId)) return;
+    // Optimistically add to set before the API call so rapid re-flips can't fire twice
+    setReviewedNoteIds((prev) => new Set([...prev, noteId]));
     try {
       await markReviewed.mutateAsync(noteId);
-      setReviewedNoteIds((prev) => new Set([...prev, noteId]));
       toast.success('Note reviewed! 🧠');
     } catch {
+      // Roll back on failure
+      setReviewedNoteIds((prev) => {
+        const next = new Set(prev);
+        next.delete(noteId);
+        return next;
+      });
       toast.error('Failed to update review status');
     }
   };

@@ -5,6 +5,7 @@ import Note from '@/app/lib/models/Note';
 
 const TITLE_MAX = 200;
 const UNDERSTANDING_MAX = 10_000;
+const DAILY_NOTE_LIMIT = 100; // Prevents storage abuse
 
 export async function GET() {
   const { userId } = await auth();
@@ -52,6 +53,17 @@ export async function POST(request: NextRequest) {
 
   try {
     await connectDB();
+
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const todayCount = await Note.countDocuments({ userId, createdAt: { $gte: today } });
+    if (todayCount >= DAILY_NOTE_LIMIT) {
+      return NextResponse.json(
+        { error: `Daily note limit of ${DAILY_NOTE_LIMIT} reached. Try again tomorrow.` },
+        { status: 429 }
+      );
+    }
+
     const note = await Note.create({
       userId,
       title: title.trim(),

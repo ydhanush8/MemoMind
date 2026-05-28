@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { UserButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { trackSubscriptionStarted } from '@/app/lib/analytics';
 import { toast } from 'react-hot-toast';
 
@@ -15,11 +16,15 @@ declare global {
 
 export default function PricingPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
   const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
   const [isProcessing, setIsProcessing] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [showManualRestore, setShowManualRestore] = useState(false);
+  const [manualSubId, setManualSubId] = useState('');
 
   // Pricing data for both currencies
   const pricing = {
@@ -57,7 +62,14 @@ export default function PricingPage() {
   };
 
   const handleUpgrade = async () => {
+    if (!window.Razorpay) {
+      setError('Payment system is loading. Please wait a moment and try again.');
+      return;
+    }
+
     setIsProcessing(true);
+    setError(null);
+
     try {
       const response = await fetch('/api/subscription/create', {
         method: 'POST',
@@ -65,65 +77,145 @@ export default function PricingPage() {
         body: JSON.stringify({ planType: selectedPlan }),
       });
 
+      const data = await response.json().catch(() => ({})) as {
+        subscriptionId?: string;
+        razorpayKeyId?: string;
+        error?: string;
+        alreadyPremium?: boolean;
+      };
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API Error:', errorText);
-        throw new Error(`Failed to create subscription: ${response.status}`);
+        if (data.alreadyPremium) {
+          // User already has premium — sync state and redirect
+          await queryClient.invalidateQueries({ queryKey: ['subscription'] });
+          await checkSubscription();
+          toast.success('You are already on Premium!');
+          return;
+        }
+        throw new Error(data.error ?? 'Failed to start payment. Please try again.');
       }
 
-      const data = await response.json();
       const { subscriptionId, razorpayKeyId } = data;
-
       if (!subscriptionId || !razorpayKeyId) {
-        throw new Error('Invalid response from server');
+        throw new Error('Invalid response from payment server. Please try again.');
       }
+
+      const capturedPlan = selectedPlan; // Capture at open time to avoid closure staleness
 
       const options = {
         key: razorpayKeyId,
         subscription_id: subscriptionId,
         name: 'MemoMind Premium',
-        description: `${selectedPlan === 'monthly' ? 'Monthly' : 'Yearly'} Subscription`,
-        handler: async function (response: any) {
-          const verifyResponse = await fetch('/api/subscription/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              razorpay_subscription_id: response.razorpay_subscription_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            }),
-          });
-
-          if (verifyResponse.ok) {
-            // Track subscription started
-            trackSubscriptionStarted({
-              planType: selectedPlan,
-              amount: selectedPlan === 'monthly' ? pricing[currency].monthly : pricing[currency].yearly,
-              currency: currency,
+        description: `${capturedPlan === 'monthly' ? 'Monthly' : 'Yearly'} Subscription`,
+        handler: async function (rzpResponse: {
+          razorpay_subscription_id: string;
+          razorpay_payment_id: string;
+          razorpay_signature: string;
+        }) {
+          try {
+            const verifyResponse = await fetch('/api/subscription/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_subscription_id: rzpResponse.razorpay_subscription_id,
+                razorpay_payment_id: rzpResponse.razorpay_payment_id,
+                razorpay_signature: rzpResponse.razorpay_signature,
+                planType: capturedPlan,
+              }),
             });
-            
-            toast.success('🎉 Welcome to Premium! AI features are now unlocked!');
-            router.push('/');
-          } else {
-            toast.error('Payment verification failed. Please contact support.');
+
+            const verifyData = await verifyResponse.json().catch(() => ({})) as {
+              success?: boolean;
+              error?: string;
+              recoverable?: boolean;
+            };
+
+            if (verifyResponse.ok && verifyData.success) {
+              trackSubscriptionStarted({
+                planType: capturedPlan,
+                amount:
+                  capturedPlan === 'monthly'
+                    ? pricing[currency].monthly
+                    : pricing[currency].yearly,
+                currency,
+              });
+              await queryClient.invalidateQueries({ queryKey: ['subscription'] });
+              toast.success('🎉 Welcome to Premium! AI features are now unlocked!');
+              router.push('/dashboard');
+            } else if (verifyData.recoverable) {
+              // Payment charged but DB failed — guide to restore
+              setError(
+                'Your payment was received by Razorpay, but we had trouble activating your account. ' +
+                'Click "Restore Subscription" below — no charge will be made.'
+              );
+            } else {
+              setError(
+                verifyData.error ??
+                'Verification failed. If you were charged, use "Restore Subscription" below.'
+              );
+            }
+          } catch {
+            // Network failure after successful Razorpay payment
+            setError(
+              'Network error during verification. If Razorpay charged you, click "Restore Subscription" below — you will NOT be charged again.'
+            );
           }
         },
-        prefill: {
-          name: '',
-          email: '',
+        modal: {
+          // Re-enable button only when modal closes, not when checkout opens
+          ondismiss: () => {
+            setIsProcessing(false);
+          },
+          escape: false, // Prevent accidental dismiss
         },
-        theme: {
-          color: '#3B82F6',
-        },
+        prefill: { name: '', email: '' },
+        theme: { color: '#3B82F6' },
       };
 
       const razorpay = new window.Razorpay(options);
       razorpay.open();
+      // Button stays disabled until ondismiss fires — prevents double-subscription
+      return;
     } catch (error) {
-      console.error('Payment error:', error);
       setError(error instanceof Error ? error.message : 'Failed to initiate payment. Please try again.');
+    }
+    setIsProcessing(false); // Only reached on pre-checkout errors
+  };
+
+  const handleRestore = async (subscriptionId?: string) => {
+    setIsRestoring(true);
+    try {
+      const res = await fetch('/api/subscription/restore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriptionId: subscriptionId || undefined }),
+      });
+      const data = await res.json() as {
+        success?: boolean;
+        alreadyActive?: boolean;
+        notFound?: boolean;
+        error?: string;
+      };
+
+      if (res.ok && data.success) {
+        await queryClient.invalidateQueries({ queryKey: ['subscription'] });
+        toast.success('🎉 Subscription restored! You are now Premium.');
+        router.push('/dashboard');
+      } else if (res.ok && data.alreadyActive) {
+        await queryClient.invalidateQueries({ queryKey: ['subscription'] });
+        toast.success('Your subscription is already active!');
+        router.push('/dashboard');
+      } else if (data.notFound) {
+        // Automatic search failed — ask for manual ID
+        setShowManualRestore(true);
+        toast.error('Auto-search failed. Please enter your Razorpay Subscription ID below.');
+      } else {
+        toast.error(data.error ?? 'Could not restore subscription. Please contact support.');
+      }
+    } catch {
+      toast.error('Restore failed. Please try again or contact support.');
     } finally {
-      setIsProcessing(false);
+      setIsRestoring(false);
     }
   };
 
@@ -144,10 +236,10 @@ export default function PricingPage() {
             <h1 className="text-3xl font-bold text-white mb-2">You're Premium! 🎉</h1>
             <p className="text-slate-400 mb-6">Enjoy all premium features</p>
             <Link
-              href="/"
+              href="/dashboard"
               className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
             >
-              Back to Dashboard
+              Go to Dashboard
             </Link>
           </div>
         </div>
@@ -318,24 +410,100 @@ export default function PricingPage() {
         </div>
       </div>
 
+      {/* Restore subscription banner for users who already paid */}
+      <div className="max-w-4xl mx-auto mt-8 px-4 pb-12">
+        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-white font-medium text-sm">Already paid but still showing Free?</p>
+              <p className="text-slate-400 text-xs mt-0.5">
+                If your Razorpay payment succeeded but the app didn&apos;t activate — click Restore. No charge.
+              </p>
+            </div>
+            <button
+              onClick={() => handleRestore()}
+              disabled={isRestoring}
+              className="flex-shrink-0 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white font-semibold py-2 px-5 rounded-lg text-sm transition-all whitespace-nowrap"
+            >
+              {isRestoring ? (
+                <span className="flex items-center gap-2">
+                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Restoring…
+                </span>
+              ) : (
+                'Restore Subscription'
+              )}
+            </button>
+          </div>
+
+          {/* Manual restore fallback — shown when automatic search fails */}
+          {showManualRestore && (
+            <div className="mt-4 pt-4 border-t border-slate-700">
+              <p className="text-slate-300 text-sm mb-2">
+                Enter your <strong>Razorpay Subscription ID</strong> from your payment receipt email
+                (starts with <code className="text-blue-400">sub_</code>):
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={manualSubId}
+                  onChange={(e) => setManualSubId(e.target.value)}
+                  placeholder="sub_xxxxxxxxxxxxxxxxxx"
+                  className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <button
+                  onClick={() => {
+                    if (manualSubId.trim()) handleRestore(manualSubId.trim());
+                  }}
+                  disabled={isRestoring || !manualSubId.trim()}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-all whitespace-nowrap"
+                >
+                  {isRestoring ? 'Restoring…' : 'Restore'}
+                </button>
+              </div>
+              <p className="text-slate-500 text-xs mt-2">
+                Find this in your Razorpay receipt email or at razorpay.com → Dashboard → Subscriptions.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Error Modal */}
       {error && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 border border-red-500/50 rounded-2xl p-8 max-w-md w-full mx-4 animate-fadeIn">
-            <div className="flex items-start gap-4 mb-6">
-              <div className="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="bg-slate-800 border border-red-500/50 rounded-2xl p-6 max-w-md w-full mx-4 animate-fadeIn">
+            <div className="flex items-start gap-4 mb-5">
+              <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-white mb-2">Payment Error</h3>
-                <p className="text-slate-300">{error}</p>
+                <h3 className="text-lg font-bold text-white mb-1">Issue with Payment</h3>
+                <p className="text-slate-300 text-sm leading-relaxed">{error}</p>
               </div>
             </div>
+
+            {/* If the error mentions Razorpay charging, show restore button prominently */}
+            {(error.toLowerCase().includes('razorpay') ||
+              error.toLowerCase().includes('charged') ||
+              error.toLowerCase().includes('restore')) && (
+              <button
+                onClick={() => {
+                  setError(null);
+                  handleRestore();
+                }}
+                disabled={isRestoring}
+                className="w-full mb-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-all"
+              >
+                {isRestoring ? 'Restoring…' : 'Restore Subscription (No Charge)'}
+              </button>
+            )}
+
             <button
               onClick={() => setError(null)}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-all"
+              className="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2.5 px-6 rounded-lg transition-all"
             >
               Close
             </button>

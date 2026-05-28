@@ -2,31 +2,33 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import connectDB from '@/app/lib/mongodb';
 import Note from '@/app/lib/models/Note';
+import { isUserPremium } from '@/app/lib/checkPremium';
 
 export async function GET() {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     await connectDB();
 
+    const premium = await isUserPremium(userId);
+    if (!premium) {
+      return NextResponse.json({ error: 'Premium subscription required' }, { status: 403 });
+    }
+
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    today.setUTCHours(0, 0, 0, 0);
 
-    const reviewedToday = await Note.countDocuments({
-      userId,
-      lastReviewedAt: { $gte: today },
-    });
-
-    const totalNotes = await Note.countDocuments({ userId });
-
-    const notesNeedingReview = await Note.countDocuments({
-      userId,
-      $or: [{ lastReviewedAt: { $lt: today } }, { lastReviewedAt: null }],
-    });
+    const [reviewedToday, totalNotes, notesNeedingReview] = await Promise.all([
+      Note.countDocuments({ userId, lastReviewedAt: { $gte: today } }),
+      Note.countDocuments({ userId }),
+      Note.countDocuments({
+        userId,
+        $or: [{ lastReviewedAt: { $lt: today } }, { lastReviewedAt: null }],
+      }),
+    ]);
 
     return NextResponse.json({
       completed: reviewedToday >= 2,

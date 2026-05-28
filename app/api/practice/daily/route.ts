@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import connectDB from '@/app/lib/mongodb';
 import Note from '@/app/lib/models/Note';
+import { isUserPremium } from '@/app/lib/checkPremium';
 
 function fisherYatesShuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -21,15 +22,20 @@ export async function GET() {
   try {
     await connectDB();
 
-    const today = new Date();
-    today.setUTCHours(0, 0, 0, 0); // UTC midnight for consistent timezone handling
+    const premium = await isUserPremium(userId);
+    if (!premium) {
+      return NextResponse.json({ error: 'Premium subscription required' }, { status: 403 });
+    }
 
-    // Fetch the 10 least-recently-reviewed notes (prioritizes older reviews)
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
     const candidates = await Note.find({
       userId,
       $or: [{ lastReviewedAt: { $lt: today } }, { lastReviewedAt: null }],
     })
-      .sort({ lastReviewedAt: 1 }) // null values sort first in MongoDB
+      .select('title understanding analysis lastReviewedAt reviewCount createdAt updatedAt')
+      .sort({ lastReviewedAt: 1 })
       .limit(10)
       .lean();
 
@@ -37,12 +43,10 @@ export async function GET() {
       return NextResponse.json([]);
     }
 
-    // Shuffle candidates fairly (Fisher-Yates) and pick 2-5
     const shuffled = fisherYatesShuffle(candidates);
     const count = Math.min(Math.max(2, Math.ceil(Math.random() * 4) + 1), shuffled.length);
-    const selected = shuffled.slice(0, count);
 
-    return NextResponse.json(selected);
+    return NextResponse.json(shuffled.slice(0, count));
   } catch (error) {
     console.error('Error fetching daily practice notes:', error);
     return NextResponse.json({ error: 'Failed to fetch practice notes' }, { status: 500 });

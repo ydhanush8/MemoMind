@@ -7,8 +7,18 @@ interface AnalysisResultProps {
   analysis: AnalysisResponse;
 }
 
+function safeArray<T>(val: unknown): T[] {
+  return Array.isArray(val) ? (val as T[]) : [];
+}
+
 export default function AnalysisResult({ analysis }: AnalysisResultProps) {
   const [revealedQuiz, setRevealedQuiz] = useState<Set<number>>(new Set());
+
+  // Runtime guard — AI may return wrong types despite structured output instruction
+  const keyPoints = safeArray<string>(analysis.key_points_understood);
+  const missingPoints = safeArray<string>(analysis.missing_or_unclear_points);
+  const nextConcepts = safeArray<string>(analysis.next_concepts_to_learn);
+  const quiz = safeArray<{ q: string; answer: string }>(analysis.quick_quiz);
 
   const toggleQuiz = (index: number) => {
     setRevealedQuiz((prev) => {
@@ -58,7 +68,7 @@ export default function AnalysisResult({ analysis }: AnalysisResultProps) {
         <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-xl p-5 backdrop-blur-sm">
           <h3 className="text-sm font-bold text-emerald-300 mb-3">✓ What You Got Right</h3>
           <ul className="space-y-1.5">
-            {analysis.key_points_understood.map((point, i) => (
+            {keyPoints.map((point, i) => (
               <li key={i} className="text-emerald-100 text-sm leading-relaxed">
                 • {point}
               </li>
@@ -69,7 +79,7 @@ export default function AnalysisResult({ analysis }: AnalysisResultProps) {
         <div className="bg-orange-900/20 border border-orange-700/50 rounded-xl p-5 backdrop-blur-sm">
           <h3 className="text-sm font-bold text-orange-300 mb-3">⚠ Areas to Improve</h3>
           <ul className="space-y-1.5">
-            {analysis.missing_or_unclear_points.map((point, i) => (
+            {missingPoints.map((point, i) => (
               <li key={i} className="text-orange-100 text-sm leading-relaxed">
                 • {point}
               </li>
@@ -85,11 +95,11 @@ export default function AnalysisResult({ analysis }: AnalysisResultProps) {
       </div>
 
       {/* Next Concepts */}
-      {analysis.next_concepts_to_learn?.length > 0 && (
+      {nextConcepts.length > 0 && (
         <div className="bg-purple-900/20 border border-purple-700/50 rounded-xl p-5 backdrop-blur-sm">
           <h3 className="text-sm font-bold text-purple-300 mb-3">🚀 What to Learn Next</h3>
           <div className="flex flex-wrap gap-2">
-            {analysis.next_concepts_to_learn.map((concept, i) => (
+            {nextConcepts.map((concept, i) => (
               <span
                 key={i}
                 className="bg-purple-800/40 text-purple-200 text-xs px-3 py-1.5 rounded-full border border-purple-700/50"
@@ -102,11 +112,11 @@ export default function AnalysisResult({ analysis }: AnalysisResultProps) {
       )}
 
       {/* Quiz */}
-      {analysis.quick_quiz?.length > 0 && (
+      {quiz.length > 0 && (
         <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5 backdrop-blur-sm">
           <h3 className="text-sm font-bold text-white mb-4">🧠 Quick Quiz</h3>
           <div className="space-y-4">
-            {analysis.quick_quiz.map((item, i) => (
+            {quiz.map((item, i) => (
               <div key={i} className="border border-slate-600 rounded-lg overflow-hidden">
                 <div className="p-3 bg-slate-700/50">
                   <p className="text-slate-200 text-sm font-medium">

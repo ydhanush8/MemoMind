@@ -3,6 +3,7 @@ import { auth } from '@clerk/nextjs/server';
 import type { AnalysisRequest, AnalysisResponse } from '@/app/lib/types';
 import connectDB from '@/app/lib/mongodb';
 import UsageLog from '@/app/lib/models/UsageLog';
+import { isUserPremium } from '@/app/lib/checkPremium';
 
 const DAILY_LIMIT = 50;
 const TITLE_MAX = 200;
@@ -96,6 +97,11 @@ export async function POST(request: NextRequest) {
   }
 
   await connectDB();
+
+  const premium = await isUserPremium(userId);
+  if (!premium) {
+    return NextResponse.json({ error: 'Premium subscription required' }, { status: 403 });
+  }
 
   const withinLimit = await checkRateLimit(userId);
   if (!withinLimit) {
