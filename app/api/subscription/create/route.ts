@@ -1,56 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import Razorpay from 'razorpay';
-import connectDB from '@/app/lib/mongodb';
+
+const VALID_PLAN_TYPES = ['monthly', 'yearly'] as const;
+type PlanType = (typeof VALID_PLAN_TYPES)[number];
 
 export async function POST(request: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  let body: { planType?: string };
   try {
-    const { userId } = await auth();
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  const { planType } = body;
 
-    const body = await request.json();
-    const { planType } = body;
+  if (!planType || !VALID_PLAN_TYPES.includes(planType as PlanType)) {
+    return NextResponse.json({ error: 'Invalid plan type. Must be monthly or yearly.' }, { status: 400 });
+  }
 
-    if (!planType || !['monthly', 'yearly'].includes(planType)) {
-      return NextResponse.json({ error: 'Invalid plan type' }, { status: 400 });
-    }
+  const keyId = process.env.RAZORPAY_KEY_ID;
+  const keySecret = process.env.RAZORPAY_KEY_SECRET;
 
-    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-      return NextResponse.json({ error: 'Payment gateway not configured' }, { status: 500 });
-    }
+  if (!keyId || !keySecret) {
+    return NextResponse.json({ error: 'Payment gateway not configured' }, { status: 500 });
+  }
 
-    const planId =
-      planType === 'monthly'
-        ? process.env.RAZORPAY_PLAN_ID_MONTHLY
-        : process.env.RAZORPAY_PLAN_ID_YEARLY;
+  const planId =
+    planType === 'monthly'
+      ? process.env.RAZORPAY_PLAN_ID_MONTHLY
+      : process.env.RAZORPAY_PLAN_ID_YEARLY;
 
-    if (!planId) {
-      return NextResponse.json({ error: 'Plan not configured' }, { status: 500 });
-    }
+  if (!planId) {
+    return NextResponse.json({ error: `Plan not configured for ${planType}` }, { status: 500 });
+  }
 
-    const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID,
-      key_secret: process.env.RAZORPAY_KEY_SECRET,
-    });
-
-    await connectDB();
+  try {
+    const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
 
     const subscription = await razorpay.subscriptions.create({
       plan_id: planId,
       customer_notify: 1,
       total_count: planType === 'monthly' ? 12 : 1,
-      notes: {
-        userId: userId,
-        planType: planType,
-      },
+      notes: { userId, planType },
     });
 
     return NextResponse.json({
       subscriptionId: subscription.id,
-      razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+      razorpayKeyId: keyId,
     });
   } catch (error) {
     console.error('Error creating subscription:', error);

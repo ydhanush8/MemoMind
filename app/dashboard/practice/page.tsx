@@ -1,67 +1,50 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { UserButton } from '@clerk/nextjs';
 import PracticeCard from '@/app/components/PracticeCard';
-import type { Note } from '@/app/lib/types';
 import { trackPracticeStarted } from '@/app/lib/analytics';
 import { toast } from 'react-hot-toast';
+import { usePracticeNotes } from '@/app/hooks/usePractice';
+import { useMarkReviewed } from '@/app/hooks/useNotes';
 
 export default function PracticePage() {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [reviewedNotes, setReviewedNotes] = useState<Set<string>>(new Set());
+  const [reviewedNoteIds, setReviewedNoteIds] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    loadPracticeNotes();
-  }, []);
+  const { data: notes = [], isLoading } = usePracticeNotes();
+  const markReviewed = useMarkReviewed();
 
-  const loadPracticeNotes = async () => {
-    try {
-      const response = await fetch('/api/practice/daily');
-      if (response.ok) {
-        const data = await response.json();
-        setNotes(data);
-        
-        // Track practice session start (only if there are notes)
-        if (data.length > 0) {
-          trackPracticeStarted(data[0]._id || data[0].id);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading practice notes:', error);
-    } finally {
-      setIsLoading(false);
+  // Track start when notes load for the first time
+  React.useEffect(() => {
+    if (notes.length > 0) {
+      trackPracticeStarted(notes[0]._id);
     }
-  };
+  }, [notes.length]);
 
   const handleReviewed = async (noteId: string) => {
-    // Update review stats
+    if (reviewedNoteIds.has(noteId)) return; // Already reviewed this card
     try {
-      await fetch(`/api/notes/${noteId}`, {
-        method: 'PATCH',
-      });
-      setReviewedNotes((prev) => new Set([...prev, noteId]));
-      toast.success('Excellent! Note reviewed. 🧠');
-    } catch (error) {
-      console.error('Error updating review stats:', error);
+      await markReviewed.mutateAsync(noteId);
+      setReviewedNoteIds((prev) => new Set([...prev, noteId]));
+      toast.success('Note reviewed! 🧠');
+    } catch {
       toast.error('Failed to update review status');
     }
   };
 
   const handleNext = () => {
-    if (currentIndex < notes.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    }
+    if (currentIndex < notes.length - 1) setCurrentIndex((i) => i + 1);
   };
 
   const handlePrevious = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
-    }
+    if (currentIndex > 0) setCurrentIndex((i) => i - 1);
   };
+
+  // Progress = how many unique notes have been reviewed (not card position)
+  const reviewedCount = reviewedNoteIds.size;
+  const progressPercent = notes.length > 0 ? (reviewedCount / notes.length) * 100 : 0;
 
   return (
     <div className="min-h-screen bg-slate-900 py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
@@ -73,23 +56,11 @@ export default function PracticePage() {
               className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-medium transition-colors text-sm sm:text-base"
             >
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
               Back to Dashboard
             </Link>
-
-            <UserButton
-              appearance={{
-                elements: {
-                  avatarBox: 'w-8 h-8 sm:w-10 sm:h-10',
-                },
-              }}
-            />
+            <UserButton appearance={{ elements: { avatarBox: 'w-8 h-8 sm:w-10 sm:h-10' } }} />
           </div>
 
           <div className="text-center">
@@ -109,17 +80,12 @@ export default function PracticePage() {
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-12 max-w-md mx-auto">
               <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                 </svg>
               </div>
               <h3 className="text-xl font-bold text-white mb-2">All Caught Up! 🎉</h3>
               <p className="text-slate-400 mb-6">
-                You&apos;ve reviewed all your notes today. Great job! Come back tomorrow for more
-                practice.
+                You&apos;ve reviewed all your notes today. Come back tomorrow for more practice.
               </p>
               <Link
                 href="/dashboard"
@@ -133,23 +99,24 @@ export default function PracticePage() {
 
         {!isLoading && notes.length > 0 && (
           <div className="space-y-8">
+            {/* Progress bar — reflects actual reviews, not card position */}
             <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-slate-300 font-medium">
                   Card {currentIndex + 1} of {notes.length}
                 </span>
-                <span className="text-slate-400 text-sm">{reviewedNotes.size} reviewed</span>
+                <span className="text-slate-400 text-sm">{reviewedCount} reviewed</span>
               </div>
               <div className="w-full bg-slate-700 rounded-full h-2">
                 <div
                   className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${((currentIndex + 1) / notes.length) * 100}%` }}
+                  style={{ width: `${progressPercent}%` }}
                 />
               </div>
             </div>
 
             <PracticeCard
-              key={`${(notes[currentIndex] as { _id?: string })._id || notes[currentIndex].id}-${currentIndex}`}
+              key={`${notes[currentIndex]._id}-${currentIndex}`}
               note={notes[currentIndex]}
               onReviewed={handleReviewed}
             />
@@ -161,12 +128,7 @@ export default function PracticePage() {
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white font-semibold px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-700 text-sm sm:text-base"
               >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 19l-7-7 7-7"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
                 Previous
               </button>
@@ -177,11 +139,7 @@ export default function PracticePage() {
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg transition-all shadow-lg shadow-green-900/50 text-sm sm:text-base"
                 >
                   <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                   Complete Practice
                 </Link>
@@ -192,12 +150,7 @@ export default function PracticePage() {
                 >
                   Next
                   <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
               )}

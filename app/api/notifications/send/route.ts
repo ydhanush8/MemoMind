@@ -5,72 +5,76 @@ import connectDB from '@/app/lib/mongodb';
 import PushSubscription from '@/app/lib/models/PushSubscription';
 import Subscription from '@/app/lib/models/Subscription';
 
-// Initialize web-push
-webpush.setVapidDetails(
-  `mailto:${process.env.VAPID_EMAIL}`,
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+function getWebPush(): typeof webpush {
+  const email = process.env.VAPID_EMAIL;
+  const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  const privateKey = process.env.VAPID_PRIVATE_KEY;
+
+  if (!email || !publicKey || !privateKey) {
+    throw new Error('VAPID credentials are not fully configured');
+  }
+
+  webpush.setVapidDetails(`mailto:${email}`, publicKey, privateKey);
+  return webpush;
+}
 
 export async function POST(request: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  let push: typeof webpush;
   try {
-    // This endpoint should ideally be protected by a secret key or internal-only
-    // For now, let's allow authenticated users to send to themselves for testing
-    // Or allow a special ADMIN_INTERNAL_KEY for cron jobs
-    const { userId } = await auth();
+    push = getWebPush();
+  } catch {
+    return NextResponse.json({ error: 'Push service not configured' }, { status: 503 });
+  }
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  let body: { targetUserId?: string; title?: string; body?: string; url?: string };
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
+
+  const { targetUserId, title, body: msgBody, url } = body;
+
+  // Users may only send to themselves (admin targeting is a future feature)
+  if (targetUserId && targetUserId !== userId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  await connectDB();
+
+  const userSubscription = await Subscription.findOne({ userId });
+  if (!userSubscription || userSubscription.plan !== 'premium') {
+    return NextResponse.json({ error: 'Premium subscription required' }, { status: 403 });
+  }
+
+  const pushSub = await PushSubscription.findOne({ userId, enabled: true });
+  if (!pushSub?.subscription) {
+    return NextResponse.json({ error: 'No active push subscription found' }, { status: 404 });
+  }
+
+  const payload = JSON.stringify({
+    title: title || '📚 MemoMind Reminder',
+    body: msgBody || 'Time for your daily practice!',
+    url: url || '/dashboard/practice',
+    badge: '/icon-192x192.png',
+    icon: '/icon-192x192.png',
+  });
+
+  try {
+    await push.sendNotification(pushSub.subscription as webpush.PushSubscription, payload);
+    return NextResponse.json({ success: true, message: 'Notification sent' });
+  } catch (err: unknown) {
+    const status = (err as { statusCode?: number }).statusCode;
+    if (status === 410 || status === 404) {
+      await PushSubscription.deleteOne({ userId });
+      return NextResponse.json({ error: 'Subscription expired and removed' }, { status: 410 });
     }
-
-    const { targetUserId, title, body, url } = await request.json();
-
-    // Only allow users to send to themselves unless they are admin (future)
-    if (targetUserId && targetUserId !== userId) {
-      return NextResponse.json({ error: 'Prohibited' }, { status: 403 });
-    }
-
-    const finalUserId = targetUserId || userId;
-
-    await connectDB();
-
-    // Check if user is premium
-    const userSubscription = await Subscription.findOne({ userId: finalUserId });
-    if (!userSubscription || userSubscription.plan !== 'premium') {
-      return NextResponse.json({ error: 'Premium subscription required' }, { status: 403 });
-    }
-
-    // Get push subscription
-    const pushSub = await PushSubscription.findOne({ userId: finalUserId, enabled: true });
-
-    if (!pushSub || !pushSub.subscription) {
-      return NextResponse.json({ error: 'User not subscribed to push' }, { status: 404 });
-    }
-
-    const payload = JSON.stringify({
-      title: title || '📚 MemoMind Reminder',
-      body: body || 'Time for your daily practice!',
-      url: url || '/practice',
-      badge: '/icon-192x192.png',
-      icon: '/icon-192x192.png',
-    });
-
-    try {
-      await webpush.sendNotification(pushSub.subscription, payload);
-      return NextResponse.json({ success: true, message: 'Notification sent' });
-    } catch (error: any) {
-      console.error('Error sending push notification:', error);
-      
-      // If 410 Gone or 404 Not Found, remove the subscription as it's no longer valid
-      if (error.statusCode === 410 || error.statusCode === 404) {
-        await PushSubscription.deleteOne({ userId: finalUserId });
-        return NextResponse.json({ error: 'Subscription expired and removed' }, { status: 410 });
-      }
-      
-      return NextResponse.json({ error: 'Failed to send notification' }, { status: 500 });
-    }
-  } catch (error) {
-    console.error('Internal error in push send:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Push send error:', err);
+    return NextResponse.json({ error: 'Failed to send notification' }, { status: 500 });
   }
 }

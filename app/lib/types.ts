@@ -1,12 +1,13 @@
-// Type definitions for MemoMind
-
-// Note stored in localStorage
 export interface Note {
-  id: string;
+  _id: string;
+  userId?: string;
   title: string;
   understanding: string;
-  createdAt: string; // ISO date string
-  analysis?: AnalysisResponse; // Optional AI analysis
+  createdAt: string;
+  updatedAt?: string;
+  analysis?: AnalysisResponse;
+  lastReviewedAt?: string | null;
+  reviewCount?: number;
 }
 
 export interface QuizQuestion {
@@ -20,12 +21,36 @@ export interface AnalysisResponse {
   missing_or_unclear_points: string[];
   simple_summary: string;
   difficulty: string;
-  accuracy_score: number; // Changed from string to number
-  next_concepts_to_learn: string[]; // Renamed from next_concepts
-  quick_quiz: QuizQuestion[]; // Renamed from quiz
+  accuracy_score: number;
+  next_concepts_to_learn: string[];
+  quick_quiz: QuizQuestion[];
 }
 
 export interface AnalysisRequest {
   title: string;
   understanding: string;
+}
+
+export interface SubscriptionStatus {
+  isPremium: boolean;
+  plan: 'free' | 'premium';
+  status: 'active' | 'cancelled' | 'expired';
+  currentPeriodEnd?: string;
+}
+
+export interface PracticeStatus {
+  completed: boolean;
+  reviewedToday: number;
+  totalNotes: number;
+  notesNeedingReview: number;
+}
+
+export interface NotificationStatus {
+  subscribed: boolean;
+  enabled?: boolean;
+  preferredTime?: string;
+  notificationTypes?: {
+    dailyReminder: boolean;
+    streakWarning: boolean;
+  };
 }

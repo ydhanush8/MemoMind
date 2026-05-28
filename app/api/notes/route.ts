@@ -3,19 +3,18 @@ import { auth } from '@clerk/nextjs/server';
 import connectDB from '@/app/lib/mongodb';
 import Note from '@/app/lib/models/Note';
 
-// GET /api/notes - Fetch all notes for current user
+const TITLE_MAX = 200;
+const UNDERSTANDING_MAX = 10_000;
+
 export async function GET() {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
-    const { userId } = await auth();
-
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     await connectDB();
-
     const notes = await Note.find({ userId }).sort({ createdAt: -1 }).lean();
-
     return NextResponse.json(notes);
   } catch (error) {
     console.error('Error fetching notes:', error);
@@ -23,31 +22,42 @@ export async function GET() {
   }
 }
 
-// POST /api/notes - Create new note
 export async function POST(request: NextRequest) {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  let body: { title?: string; understanding?: string; analysis?: unknown };
   try {
-    const { userId } = await auth();
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
 
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  const { title, understanding, analysis } = body;
 
-    const body = await request.json();
-    const { title, understanding, analysis } = body;
+  if (!title?.trim() || !understanding?.trim()) {
+    return NextResponse.json({ error: 'Title and understanding are required' }, { status: 400 });
+  }
+  if (title.length > TITLE_MAX) {
+    return NextResponse.json({ error: `Title must be under ${TITLE_MAX} characters` }, { status: 400 });
+  }
+  if (understanding.length > UNDERSTANDING_MAX) {
+    return NextResponse.json(
+      { error: `Understanding must be under ${UNDERSTANDING_MAX} characters` },
+      { status: 400 }
+    );
+  }
 
-    if (!title || !understanding) {
-      return NextResponse.json({ error: 'Title and understanding are required' }, { status: 400 });
-    }
-
+  try {
     await connectDB();
-
     const note = await Note.create({
       userId,
-      title,
-      understanding,
-      analysis: analysis || null,
+      title: title.trim(),
+      understanding: understanding.trim(),
+      analysis: analysis ?? null,
     });
-
     return NextResponse.json(note, { status: 201 });
   } catch (error) {
     console.error('Error creating note:', error);
