@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
   }
 
   const payload = JSON.stringify({
-    title: title || '📚 MemoMind Reminder',
+    title: title || 'MemoMind Reminder',
     body: msgBody || 'Time for your daily practice!',
     url: url || '/dashboard/practice',
     badge: '/icon-192x192.png',

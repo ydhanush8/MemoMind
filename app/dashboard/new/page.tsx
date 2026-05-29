@@ -43,7 +43,7 @@ export default function NewNotePage() {
       });
       trackNoteCreated(note._id);
       setIsSaved(true);
-      toast.success('Note saved successfully! 🎉');
+      toast.success('Note saved successfully');
       router.push('/dashboard');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to save note. Please try again.');
@@ -155,7 +155,7 @@ export default function NewNotePage() {
 
             {isSaved && (
               <div className="bg-green-900/20 border border-green-500/50 rounded-lg p-3 sm:p-4">
-                <p className="text-green-400 text-sm">✓ Note saved! Redirecting to dashboard…</p>
+                <p className="text-green-400 text-sm">Note saved — redirecting to dashboard…</p>
               </div>
             )}
 
@@ -217,7 +217,7 @@ export default function NewNotePage() {
 
           <div className="mt-6 bg-slate-700/30 border border-slate-600 rounded-lg p-4">
             <p className="text-sm text-slate-300">
-              <span className="font-semibold text-blue-400">💡 Tip:</span>{' '}
+              <span className="font-semibold text-blue-400">Tip:</span>{' '}
               {isPremium
                 ? 'Use AI Analysis to get instant feedback — it also saves your note automatically.'
                 : 'Upgrade to Premium to unlock AI analysis!'}
