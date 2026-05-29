@@ -7,6 +7,7 @@ import NoteCard from '@/app/components/NoteCard';
 import PaywallModal from '@/app/components/PaywallModal';
 import { UserButton } from '@clerk/nextjs';
 import { toast } from 'react-hot-toast';
+import { Zap } from 'lucide-react';
 import { useSubscription } from '@/app/hooks/useSubscription';
 import { useNotes, useDeleteNote } from '@/app/hooks/useNotes';
 import { usePracticeStatus } from '@/app/hooks/usePractice';
@@ -44,8 +45,9 @@ export default function DashboardPage() {
                     <span className="text-blue-400">Memo</span>Mind
                   </h1>
                   {isPremium && (
-                    <span className="bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                      ⭐ Premium
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-md border border-blue-500/40 text-blue-400 bg-blue-500/10 font-medium">
+                      <Zap className="w-3 h-3" />
+                      Pro
                     </span>
                   )}
                 </div>
@@ -75,7 +77,7 @@ export default function DashboardPage() {
                         practiceStatus.completed ? 'bg-green-500' : 'bg-orange-500'
                       } text-white`}
                     >
-                      {practiceStatus.completed ? '✓' : practiceStatus.notesNeedingReview}
+                      {practiceStatus.completed ? '✓' : String(practiceStatus.notesNeedingReview)}
                     </span>
                   )}
                 </Link>

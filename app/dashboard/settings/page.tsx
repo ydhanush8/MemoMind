@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useUser, UserButton } from '@clerk/nextjs';
 import { toast } from 'react-hot-toast';
+import { Zap } from 'lucide-react';
 import { useSubscription } from '@/app/hooks/useSubscription';
 import {
   useNotificationStatus,
@@ -55,8 +56,8 @@ export default function SettingsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: '🔔 Test Notification',
-          body: 'This is a test notification from MemoMind! 🎉',
+          title: 'MemoMind Reminder',
+          body: 'Test notification from MemoMind — it works.',
           url: '/dashboard',
         }),
       });
@@ -121,8 +122,8 @@ export default function SettingsPage() {
             </h2>
             <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg border border-slate-700">
               <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${isPremium ? 'bg-purple-600' : 'bg-slate-700'}`}>
-                  ⭐
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isPremium ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-slate-800 border border-slate-700'}`}>
+                  <Zap className={`w-5 h-5 ${isPremium ? 'text-blue-400' : 'text-slate-500'}`} />
                 </div>
                 <div>
                   <p className="text-white font-bold">{isPremium ? 'Premium Plan' : 'Free Plan'}</p>
@@ -138,7 +139,7 @@ export default function SettingsPage() {
               {!isPremium && (
                 <Link
                   href="/pricing"
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-bold px-4 py-2 rounded-lg"
+                  className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
                 >
                   UPGRADE
                 </Link>
@@ -158,7 +159,7 @@ export default function SettingsPage() {
             {!isPremium ? (
               <div className="bg-blue-900/20 border border-blue-500/50 rounded-lg p-4">
                 <p className="text-blue-200 text-sm">
-                  ⭐ Notifications are a premium feature. Upgrade to enable daily reminders.
+                  Notifications are a Pro feature. Upgrade to enable daily reminders.
                 </p>
                 <Link href="/pricing" className="mt-3 inline-block text-blue-400 hover:text-blue-300 text-sm font-semibold">
                   View Pricing →

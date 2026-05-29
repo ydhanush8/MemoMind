@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@clerk/nextjs';
 import type { SubscriptionStatus } from '@/app/lib/types';
 
 async function fetchSubscription(): Promise<SubscriptionStatus> {
@@ -10,9 +11,11 @@ async function fetchSubscription(): Promise<SubscriptionStatus> {
 }
 
 export function useSubscription() {
+  const { isSignedIn } = useAuth();
   return useQuery<SubscriptionStatus>({
     queryKey: ['subscription'],
     queryFn: fetchSubscription,
-    staleTime: 5 * 60 * 1000, // subscription status doesn't change often
+    staleTime: 5 * 60 * 1000,
+    enabled: isSignedIn === true, // never fires on public pages
   });
 }

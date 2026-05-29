@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { trackSubscriptionStarted } from '@/app/lib/analytics';
 import { toast } from 'react-hot-toast';
+import { useSubscription } from '@/app/hooks/useSubscription';
 
 declare global {
   interface Window {
@@ -20,8 +21,8 @@ export default function PricingPage() {
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
   const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [subscriptionStatus, setSubscriptionStatus] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const { data: subscriptionStatus, refetch: refetchSubscription } = useSubscription();
   const [isRestoring, setIsRestoring] = useState(false);
   const [showManualRestore, setShowManualRestore] = useState(false);
   const [manualSubId, setManualSubId] = useState('');
@@ -43,7 +44,6 @@ export default function PricingPage() {
   };
 
   useEffect(() => {
-    checkSubscription();
     const script = document.createElement('script');
     script.src = 'https://checkout.razorpay.com/v1/checkout.js';
     script.async = true;
@@ -52,14 +52,6 @@ export default function PricingPage() {
       document.body.removeChild(script);
     };
   }, []);
-
-  const checkSubscription = async () => {
-    const response = await fetch('/api/subscription/status');
-    if (response.ok) {
-      const data = await response.json();
-      setSubscriptionStatus(data);
-    }
-  };
 
   const handleUpgrade = async () => {
     if (!window.Razorpay) {
@@ -88,7 +80,7 @@ export default function PricingPage() {
         if (data.alreadyPremium) {
           // User already has premium — sync state and redirect
           await queryClient.invalidateQueries({ queryKey: ['subscription'] });
-          await checkSubscription();
+          await refetchSubscription();
           toast.success('You are already on Premium!');
           return;
         }
@@ -140,7 +132,7 @@ export default function PricingPage() {
                 currency,
               });
               await queryClient.invalidateQueries({ queryKey: ['subscription'] });
-              toast.success('🎉 Welcome to Premium! AI features are now unlocked!');
+              toast.success('Welcome to Pro! AI features are now unlocked.');
               router.push('/dashboard');
             } else if (verifyData.recoverable) {
               // Payment charged but DB failed — guide to restore
@@ -199,7 +191,7 @@ export default function PricingPage() {
 
       if (res.ok && data.success) {
         await queryClient.invalidateQueries({ queryKey: ['subscription'] });
-        toast.success('🎉 Subscription restored! You are now Premium.');
+        toast.success('Subscription restored. You are now on Pro.');
         router.push('/dashboard');
       } else if (res.ok && data.alreadyActive) {
         await queryClient.invalidateQueries({ queryKey: ['subscription'] });
@@ -233,7 +225,7 @@ export default function PricingPage() {
                 />
               </svg>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">You're Premium! 🎉</h1>
+            <h1 className="text-3xl font-bold text-white mb-2">You&apos;re on Pro</h1>
             <p className="text-slate-400 mb-6">Enjoy all premium features</p>
             <Link
               href="/dashboard"
@@ -286,7 +278,7 @@ export default function PricingPage() {
                   : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50'
               }`}
             >
-              🇮🇳 INR (₹)
+              INR (₹)
             </button>
             <button
               onClick={() => setCurrency('USD')}
@@ -296,7 +288,7 @@ export default function PricingPage() {
                   : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50'
               }`}
             >
-              🌎 USD ($)
+              USD ($)
             </button>
           </div>
         </div>

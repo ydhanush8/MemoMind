@@ -5,8 +5,8 @@ import Subscription from '@/app/lib/models/Subscription';
 import Note from '@/app/lib/models/Note';
 import webpush from 'web-push';
 
-const NOTIFICATION_TITLE = '☀️ Good Morning! Ready to Learn?';
-const NOTIFICATION_BODY = 'Kickstart your day with a quick 5-min review! 🧠';
+const NOTIFICATION_TITLE = 'Good morning — time to review';
+const NOTIFICATION_BODY = 'Kickstart your day with a quick 5-min review.';
 const BATCH_SIZE = 50;
 
 function initWebPush() {

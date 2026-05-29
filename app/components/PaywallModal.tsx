@@ -2,11 +2,18 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { X, Check, Zap } from 'lucide-react';
 
 interface PaywallModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+const features = [
+  'AI Analysis — instant feedback on your understanding',
+  'Daily Practice — spaced repetition flip cards',
+  'Review tracking — never forget what you learned',
+];
 
 export default function PaywallModal({ isOpen, onClose }: PaywallModalProps) {
   const router = useRouter();
@@ -21,109 +28,61 @@ export default function PaywallModal({ isOpen, onClose }: PaywallModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="relative bg-slate-800 border border-slate-700 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl">
+      <div className="relative bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 max-w-md w-full shadow-2xl">
+
+        {/* Close */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+          <X className="w-5 h-5" />
         </button>
 
-        <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg
-              className="w-8 h-8 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-              />
-            </svg>
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Zap className="w-5 h-5 text-blue-400" />
+            <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Pro Feature</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">Premium Feature</h2>
-          <p className="text-slate-400">Upgrade to unlock AI-powered learning</p>
+          <h2 className="text-xl font-bold text-white mb-1">Upgrade to Pro</h2>
+          <p className="text-slate-400 text-sm">Unlock AI-powered learning tools</p>
         </div>
 
-        <div className="space-y-3 mb-6">
-          <div className="flex items-start gap-3 text-slate-300">
-            <svg
-              className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span>AI Analysis - Get instant feedback on your understanding</span>
-          </div>
-          <div className="flex items-start gap-3 text-slate-300">
-            <svg
-              className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span>Daily Practice - Spaced repetition with smart flip cards</span>
-          </div>
-          <div className="flex items-start gap-3 text-slate-300">
-            <svg
-              className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <span>Review Tracking - Never forget what you&apos;ve learned</span>
-          </div>
-        </div>
+        {/* Features */}
+        <ul className="space-y-2.5 mb-6">
+          {features.map((f, i) => (
+            <li key={i} className="flex items-start gap-3 text-sm text-slate-300">
+              <Check className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" />
+              {f}
+            </li>
+          ))}
+        </ul>
 
-        <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 mb-6">
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-slate-300 font-medium">Monthly</span>
-            <span className="text-2xl font-bold text-white">₹99</span>
+        {/* Pricing */}
+        <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm text-slate-400">Monthly</span>
+            <span className="text-lg font-bold text-white">₹99</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-slate-300 font-medium">Yearly</span>
-            <div className="text-right">
-              <span className="text-2xl font-bold text-white">₹999</span>
-              <span className="text-xs text-green-400 ml-2">(Save ₹189)</span>
+            <span className="text-sm text-slate-400">Yearly</span>
+            <div className="flex items-center gap-2">
+              <span className="text-lg font-bold text-white">₹999</span>
+              <span className="text-xs text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded">Save ₹189</span>
             </div>
           </div>
         </div>
 
+        {/* CTA */}
         <button
           onClick={handleUpgrade}
           disabled={isProcessing}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg disabled:opacity-50"
+          className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2.5 px-6 rounded-lg transition-colors disabled:opacity-50 text-sm"
         >
-          {isProcessing ? 'Loading...' : 'Upgrade to Premium'}
+          {isProcessing ? 'Loading...' : 'View pricing'}
         </button>
 
-        <p className="text-xs text-slate-500 text-center mt-4">
+        <p className="text-xs text-slate-600 text-center mt-3">
           Cancel anytime. No questions asked.
         </p>
       </div>

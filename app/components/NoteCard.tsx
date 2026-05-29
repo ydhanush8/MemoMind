@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Trash2, ChevronDown, ExternalLink, Sparkles, X, FileText } from 'lucide-react';
 import type { Note } from '@/app/lib/types';
 import AnalysisResult from './AnalysisResult';
 
@@ -39,103 +40,90 @@ export default function NoteCard({ note, onDelete }: NoteCardProps) {
   return (
     <>
       <div
-        className={`bg-slate-800/50 backdrop-blur-sm border border-slate-700 hover:border-blue-500/50 rounded-xl p-6 shadow-xl hover:shadow-2xl hover:shadow-blue-900/20 transition-all duration-300 transform hover:-translate-y-1 ${
+        className={`bg-slate-800/50 border border-slate-700 hover:border-slate-600 rounded-xl p-6 transition-all duration-200 ${
           isDeleting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
         }`}
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-3 mb-3">
-          <h3 className="text-xl font-bold text-white flex-1 line-clamp-2">{note.title}</h3>
+          <h3 className="text-base font-semibold text-white flex-1 line-clamp-2 leading-snug">
+            {note.title}
+          </h3>
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="text-slate-400 hover:text-red-400 transition-colors p-1 rounded-lg hover:bg-red-900/20"
+            className="text-slate-500 hover:text-red-400 transition-colors p-1 rounded"
             aria-label="Delete note"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Date + badges */}
+        {/* Meta row */}
         <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <svg className="w-4 h-4 text-slate-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <span className="text-sm text-slate-400">{formatDate(note.createdAt)}</span>
+          <span className="text-xs text-slate-500">{formatDate(note.createdAt)}</span>
           {note.analysis && (
-            <span className="px-2 py-0.5 bg-purple-900/50 border border-purple-700/50 text-purple-300 text-xs rounded-full">
-              🤖 AI Analyzed
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-violet-500/10 border border-violet-500/30 text-violet-400 text-xs rounded-md">
+              <Sparkles className="w-3 h-3" />
+              Analyzed
             </span>
           )}
           {note.reviewCount !== undefined && note.reviewCount > 0 && (
-            <span className="px-2 py-0.5 bg-blue-900/50 border border-blue-700/50 text-blue-300 text-xs rounded-full">
+            <span className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs rounded-md">
               {note.reviewCount}× reviewed
             </span>
           )}
         </div>
 
         {/* Content */}
-        <div className="text-slate-300 leading-relaxed mb-3">
-          <p className="whitespace-pre-wrap">{showFull ? note.understanding : truncatedText}</p>
-        </div>
+        <p className="text-slate-400 text-sm leading-relaxed mb-3 whitespace-pre-wrap">
+          {showFull ? note.understanding : truncatedText}
+        </p>
 
         {/* Actions */}
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
           {note.understanding.length > 150 && (
             <button
               onClick={() => setShowFull(!showFull)}
-              className="text-blue-400 hover:text-blue-300 text-sm font-medium flex items-center gap-1 transition-colors"
+              className="text-slate-500 hover:text-slate-300 text-xs font-medium flex items-center gap-1 transition-colors"
             >
               {showFull ? 'Show less' : 'Read more'}
-              <svg className={`w-4 h-4 transition-transform ${showFull ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+              <ChevronDown className={`w-3 h-3 transition-transform ${showFull ? 'rotate-180' : ''}`} />
             </button>
           )}
           <button
             onClick={() => setShowModal(true)}
-            className="ml-auto text-purple-400 hover:text-purple-300 text-sm font-medium flex items-center gap-1 transition-colors"
+            className="ml-auto text-slate-500 hover:text-slate-300 text-xs font-medium flex items-center gap-1 transition-colors"
           >
-            {note.analysis ? '🤖 View Full Details' : '📖 View Full Note'}
+            {note.analysis ? 'View details' : 'View note'}
+            <ExternalLink className="w-3 h-3" />
           </button>
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation */}
       {showDeleteConfirm && (
         <div
           className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={() => setShowDeleteConfirm(false)}
         >
           <div
-            className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6"
+            className="bg-slate-900 border border-slate-700 rounded-xl max-w-sm w-full p-6"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-red-900/50 rounded-full flex items-center justify-center">
-                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-white">Delete Note?</h3>
-                <p className="text-slate-400 text-sm">This action cannot be undone.</p>
-              </div>
-            </div>
-            <p className="text-slate-300 mb-6">
-              Are you sure you want to delete &quot;<span className="font-semibold">{note.title}</span>&quot;?
+            <h3 className="text-base font-semibold text-white mb-1">Delete note?</h3>
+            <p className="text-slate-400 text-sm mb-5">
+              &quot;<span className="text-slate-300">{note.title}</span>&quot; will be permanently removed.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-semibold py-3 px-6 rounded-lg transition-all"
+                className="flex-1 bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition-all border border-slate-700"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDelete}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-all"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition-all"
               >
                 Delete
               </button>
@@ -154,30 +142,36 @@ export default function NoteCard({ note, onDelete }: NoteCardProps) {
             className="bg-slate-900 border border-slate-700 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="bg-slate-900 border-b border-slate-700 p-6 flex items-center justify-between flex-shrink-0">
-              <h2 className="text-2xl font-bold text-white pr-4">{note.title}</h2>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-white transition-colors flex-shrink-0">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+            {/* Modal header */}
+            <div className="border-b border-slate-800 p-5 flex items-center justify-between flex-shrink-0">
+              <h2 className="text-lg font-semibold text-white pr-4 line-clamp-1">{note.title}</h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-slate-500 hover:text-white transition-colors flex-shrink-0"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 space-y-6 overflow-y-auto">
-              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-                <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                    <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-                  </svg>
+            <div className="p-5 space-y-5 overflow-y-auto">
+              {/* Note content */}
+              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
+                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5" />
                   What I Learned
                 </h3>
-                <p className="text-slate-300 leading-relaxed whitespace-pre-wrap">{note.understanding}</p>
+                <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
+                  {note.understanding}
+                </p>
               </div>
 
+              {/* AI Analysis */}
               {note.analysis && (
-                <div className="border-t border-slate-700 pt-6">
-                  <h3 className="text-xl font-bold text-purple-400 mb-4">🤖 AI Analysis</h3>
+                <div>
+                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    AI Analysis
+                  </h3>
                   <AnalysisResult analysis={note.analysis} />
                 </div>
               )}

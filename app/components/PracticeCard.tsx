@@ -107,7 +107,7 @@ export default function PracticeCard({ note, onReviewed }: PracticeCardProps) {
             {/* AI Analysis */}
             {note.analysis && (
               <div className="border-t border-slate-700 pt-4" onClick={(e) => e.stopPropagation()}>
-                <h3 className="text-sm font-semibold text-purple-400 mb-3">🤖 AI Analysis</h3>
+                <h3 className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">AI Analysis</h3>
                 <AnalysisResult analysis={note.analysis} />
               </div>
             )}

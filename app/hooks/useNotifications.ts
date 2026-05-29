@@ -1,6 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@clerk/nextjs';
 import type { NotificationStatus } from '@/app/lib/types';
 
 async function fetchNotificationStatus(): Promise<NotificationStatus> {
@@ -10,16 +11,17 @@ async function fetchNotificationStatus(): Promise<NotificationStatus> {
 }
 
 export function useNotificationStatus() {
+  const { isSignedIn } = useAuth();
   return useQuery<NotificationStatus>({
     queryKey: ['notifications'],
     queryFn: fetchNotificationStatus,
     staleTime: 5 * 60 * 1000,
+    enabled: isSignedIn === true, // never fires on public pages
   });
 }
 
 export function useUpdateNotificationPreferences() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (preferences: { preferredTime?: string; enabled?: boolean }) => {
       const res = await fetch('/api/notifications/subscribe', {
@@ -41,7 +43,6 @@ export function useUpdateNotificationPreferences() {
 
 export function useDeleteNotificationSubscription() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async () => {
       const res = await fetch('/api/notifications/subscribe', { method: 'DELETE' });
