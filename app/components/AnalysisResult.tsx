@@ -37,23 +37,25 @@ export default function AnalysisResult({ analysis }: AnalysisResultProps) {
 
   const difficultyColor =
     analysis.difficulty === 'Easy'
-      ? 'text-green-400 bg-green-900/20 border-green-700/50'
+      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
       : analysis.difficulty === 'Hard'
-        ? 'text-red-400 bg-red-900/20 border-red-700/50'
-        : 'text-yellow-400 bg-yellow-900/20 border-yellow-700/50';
+        ? 'bg-destructive/15 text-red-400 border-destructive/30'
+        : 'bg-amber-500/15 text-amber-400 border-amber-500/30';
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-5 animate-fadeIn">
+    <div className="animate-fade-in max-w-3xl mx-auto space-y-4">
 
-      {/* Score + Difficulty */}
+      {/* Score + Difficulty row */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
-          <p className="text-slate-400 text-xs mb-1">Understanding Score</p>
-          <span className="text-4xl font-bold text-blue-400">{analysis.accuracy_score}%</span>
+        <div className="rounded-xl border border-border/50 bg-card p-5">
+          <p className="text-xs text-muted-foreground mb-1">Understanding Score</p>
+          <span className="text-3xl font-bold text-primary">{analysis.accuracy_score}%</span>
         </div>
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
-          <p className="text-slate-400 text-xs mb-1">Difficulty</p>
-          <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold border ${difficultyColor}`}>
+        <div className="rounded-xl border border-border/50 bg-card p-5">
+          <p className="text-xs text-muted-foreground mb-1">Difficulty</p>
+          <span
+            className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold border ${difficultyColor}`}
+          >
             {analysis.difficulty}
           </span>
         </div>
@@ -61,41 +63,41 @@ export default function AnalysisResult({ analysis }: AnalysisResultProps) {
 
       {/* Cleaned Explanation */}
       {analysis.cleaned_explanation && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
-            <Pencil className="w-4 h-4 text-blue-400" />
-            Cleaned Explanation
+        <div className="rounded-xl border border-border/50 bg-card p-5">
+          <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+            <Pencil className="w-4 h-4 text-primary" />
+            Improved Explanation
           </h3>
-          <p className="text-slate-200 text-sm leading-relaxed">{analysis.cleaned_explanation}</p>
+          <p className="text-sm text-foreground leading-relaxed">{analysis.cleaned_explanation}</p>
         </div>
       )}
 
-      {/* Key Points Grid */}
+      {/* Key points grid */}
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="bg-emerald-900/20 border border-emerald-700/50 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-emerald-300 mb-3 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4" />
+        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             What You Got Right
           </h3>
           <ul className="space-y-1.5">
             {keyPoints.map((point, i) => (
-              <li key={i} className="text-emerald-100 text-sm leading-relaxed flex gap-2">
-                <span className="text-emerald-500 mt-0.5 shrink-0">–</span>
+              <li key={i} className="text-sm text-foreground/80 leading-relaxed flex gap-2">
+                <span className="text-emerald-400 mt-0.5 shrink-0">–</span>
                 {point}
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="bg-orange-900/20 border border-orange-700/50 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-orange-300 mb-3 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" />
+        <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-400" />
             Areas to Improve
           </h3>
           <ul className="space-y-1.5">
             {missingPoints.map((point, i) => (
-              <li key={i} className="text-orange-100 text-sm leading-relaxed flex gap-2">
-                <span className="text-orange-500 mt-0.5 shrink-0">–</span>
+              <li key={i} className="text-sm text-foreground/80 leading-relaxed flex gap-2">
+                <span className="text-amber-400 mt-0.5 shrink-0">–</span>
                 {point}
               </li>
             ))}
@@ -104,26 +106,26 @@ export default function AnalysisResult({ analysis }: AnalysisResultProps) {
       </div>
 
       {/* Summary */}
-      <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
-        <h3 className="text-sm font-semibold text-slate-300 mb-2 flex items-center gap-2">
-          <FileText className="w-4 h-4 text-slate-400" />
+      <div className="bg-card border border-border/50 rounded-xl p-5">
+        <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+          <FileText className="w-4 h-4 text-muted-foreground" />
           Summary
         </h3>
-        <p className="text-slate-300 text-sm leading-relaxed">{analysis.simple_summary}</p>
+        <p className="text-sm text-foreground leading-relaxed">{analysis.simple_summary}</p>
       </div>
 
       {/* Next Concepts */}
       {nextConcepts.length > 0 && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
-            <ArrowRight className="w-4 h-4 text-blue-400" />
+        <div className="bg-card border border-border/50 rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <ArrowRight className="w-4 h-4 text-primary" />
             What to Learn Next
           </h3>
           <div className="flex flex-wrap gap-2">
             {nextConcepts.map((concept, i) => (
               <span
                 key={i}
-                className="bg-slate-700/60 text-slate-200 text-xs px-3 py-1.5 rounded-md border border-slate-600"
+                className="bg-secondary text-foreground text-xs px-3 py-1.5 rounded-md border border-border font-medium"
               >
                 {concept}
               </span>
@@ -134,26 +136,26 @@ export default function AnalysisResult({ analysis }: AnalysisResultProps) {
 
       {/* Quiz */}
       {quiz.length > 0 && (
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-slate-300 mb-4 flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-blue-400" />
+        <div className="bg-card border border-border/50 rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-primary" />
             Quick Quiz
           </h3>
           <div className="space-y-3">
             {quiz.map((item, i) => (
-              <div key={i} className="border border-slate-700 rounded-lg overflow-hidden">
-                <div className="p-3 bg-slate-700/40">
-                  <p className="text-slate-200 text-sm font-medium">
+              <div key={i} className="border border-border/50 rounded-lg overflow-hidden">
+                <div className="bg-secondary/50 p-3">
+                  <p className="text-sm font-medium text-foreground">
                     {i + 1}. {item.q}
                   </p>
                 </div>
                 <div className="p-3">
                   {revealedQuiz.has(i) ? (
-                    <p className="text-green-300 text-sm">{item.answer}</p>
+                    <p className="text-sm text-foreground">{item.answer}</p>
                   ) : (
                     <button
                       onClick={() => toggleQuiz(i)}
-                      className="text-blue-400 hover:text-blue-300 text-xs font-medium transition-colors"
+                      className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
                     >
                       Reveal answer
                     </button>

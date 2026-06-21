@@ -21,8 +21,8 @@ export function usePracticeNotes() {
   return useQuery<Note[]>({
     queryKey: ['practiceNotes'],
     queryFn: fetchPracticeNotes,
-    staleTime: 5 * 60 * 1000,
-    enabled: subscription?.isPremium === true, // skip for free users
+    staleTime: 0, // always re-fetch on mount so completed sessions show "all caught up"
+    enabled: subscription?.isPremium === true,
   });
 }
 

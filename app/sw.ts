@@ -59,12 +59,12 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
     self.clients
       .matchAll({ type: 'window', includeUncontrolled: true })
       .then((clientList: readonly WindowClient[]) => {
-        const focused = clientList.find((c: WindowClient) => c.focused);
-        const existing = focused ?? clientList[0];
-        if (existing) {
-          existing.navigate(targetUrl);
-          return existing.focus();
-        }
+        // If a tab is already on the target URL, focus it without navigating away
+        const match = clientList.find(
+          (c: WindowClient) => new URL(c.url).pathname === new URL(targetUrl, self.location.origin).pathname
+        );
+        if (match) return match.focus();
+        // No matching tab — open a new window rather than hijacking an existing one
         return self.clients.openWindow(targetUrl);
       })
   );

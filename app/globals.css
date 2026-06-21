@@ -3,24 +3,234 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 6% 6%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 6% 6%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 239 84% 67%;
+
+    --radius: 0.5rem;
+  }
+
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 239 84% 67%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
   body {
-    @apply bg-slate-900 text-slate-100 antialiased;
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  ::selection {
+    background-color: hsl(var(--primary) / 0.2);
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.3);
   }
 }
 
 @layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .glow-primary {
+    box-shadow: 0 0 40px -10px hsl(var(--primary) / 0.4);
+  }
+  .glow-primary-sm {
+    box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.3);
+  }
+  .gradient-text {
+    background: linear-gradient(135deg, #818cf8 0%, #a78bfa 50%, #c084fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .glass {
+    background: hsl(var(--card) / 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out both;
+  }
+  .animate-fade-in-up {
+    animation: fade-in-up 0.4s ease-out both;
+  }
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out both;
+  }
   .animate-fadeIn {
-    animation: fadeIn 0.5s ease-in-out;
+    animation: fade-in 0.3s ease-out both;
   }
+  .animate-aurora-1 { animation: aurora-1 16s ease-in-out infinite; }
+  .animate-aurora-2 { animation: aurora-2 21s ease-in-out infinite; }
+  .animate-aurora-3 { animation: aurora-3 13s ease-in-out infinite; }
+}
 
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes aurora-1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(70px, -50px) scale(1.1); }
+  66% { transform: translate(-40px, 60px) scale(0.94); }
+}
+@keyframes aurora-2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40% { transform: translate(-80px, 35px) scale(1.07); }
+  75% { transform: translate(45px, -25px) scale(0.97); }
+}
+@keyframes aurora-3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  30% { transform: translate(35px, 70px) scale(1.12); }
+  70% { transform: translate(-55px, -35px) scale(0.91); }
+}
+
+/* ── Clerk dark-theme overrides ──────────────────────────────────────────── */
+/* Variables alone don't fully theme the UserButton popover — target the     */
+/* generated .cl-* classes directly so action buttons are always readable.   */
+.cl-userButtonPopoverCard {
+  background-color: #111113 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.7) !important;
+}
+.cl-userButtonPopoverMain {
+  background-color: #111113 !important;
+}
+.cl-userButtonPopoverActions {
+  background-color: #111113 !important;
+}
+.cl-userButtonPopoverActionButton {
+  color: #e4e4e7 !important;
+}
+.cl-userButtonPopoverActionButton:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+.cl-userButtonPopoverActionButtonText {
+  color: #e4e4e7 !important;
+}
+.cl-userButtonPopoverActionButtonIcon {
+  color: #a1a1aa !important;
+}
+.cl-userPreviewMainIdentifier {
+  color: #fafafa !important;
+}
+.cl-userPreviewSecondaryIdentifier {
+  color: #a1a1aa !important;
+}
+.cl-userButtonPopoverFooter {
+  background-color: #111113 !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+/* Sign-in / sign-up card */
+.cl-card {
+  background-color: #111113 !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.cl-headerTitle {
+  color: #fafafa !important;
+}
+.cl-headerSubtitle {
+  color: #a1a1aa !important;
+}
+.cl-socialButtonsBlockButton {
+  background-color: #1c1c1f !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #fafafa !important;
+}
+.cl-socialButtonsBlockButtonText {
+  color: #fafafa !important;
+}
+.cl-formFieldLabel {
+  color: #d4d4d8 !important;
+}
+.cl-formFieldInput {
+  background-color: #1c1c1f !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #fafafa !important;
+}
+.cl-dividerLine {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+}
+.cl-dividerText {
+  color: #71717a !important;
+}
+.cl-footerActionLink {
+  color: #818cf8 !important;
+}
+.cl-footerActionText {
+  color: #a1a1aa !important;
 }

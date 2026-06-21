@@ -22,9 +22,21 @@ export async function POST(request: NextRequest) {
 
   try {
     await connectDB();
+    // Upsert keyed by (userId, endpoint) — one document per device.
+    // $set updates mutable fields on re-subscribe; $setOnInsert writes immutable fields + defaults only on first insert.
+    // This preserves preferredTime and notificationTypes when a browser renews its push subscription.
     const record = await PushSubscription.findOneAndUpdate(
-      { userId },
-      { userId, subscription, enabled: true, updatedAt: new Date() },
+      { userId, endpoint: subscription.endpoint },
+      {
+        $set: { subscription, enabled: true, updatedAt: new Date() },
+        $setOnInsert: {
+          userId,
+          endpoint: subscription.endpoint,
+          preferredTime: '19:00',
+          notificationTypes: { dailyReminder: true, streakWarning: true },
+          createdAt: new Date(),
+        },
+      },
       { upsert: true, new: true }
     );
     return NextResponse.json({
@@ -46,6 +58,7 @@ export async function GET() {
 
   try {
     await connectDB();
+    // Return status from any one active subscription (preferences are per-user, not per-device)
     const record = await PushSubscription.findOne({ userId });
     if (!record) {
       return NextResponse.json({ subscribed: false });
@@ -76,16 +89,19 @@ export async function PATCH(request: NextRequest) {
   }
 
   const update: Record<string, unknown> = { updatedAt: new Date() };
-  if (typeof body.preferredTime === 'string') update.preferredTime = body.preferredTime;
+  if (typeof body.preferredTime === 'string' && /^\d{2}:\d{2}$/.test(body.preferredTime)) {
+    update.preferredTime = body.preferredTime;
+  }
   if (typeof body.enabled === 'boolean') update.enabled = body.enabled;
 
   try {
     await connectDB();
-    const record = await PushSubscription.findOneAndUpdate({ userId }, update, { new: true });
-    if (!record) {
+    // Apply preference changes to all devices for this user
+    const result = await PushSubscription.updateMany({ userId }, { $set: update });
+    if (result.matchedCount === 0) {
       return NextResponse.json({ error: 'No subscription found' }, { status: 404 });
     }
-    return NextResponse.json({ success: true, preferredTime: record.preferredTime });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error updating preferences:', error);
     return NextResponse.json({ error: 'Failed to update preferences' }, { status: 500 });
@@ -100,7 +116,8 @@ export async function DELETE() {
 
   try {
     await connectDB();
-    await PushSubscription.deleteOne({ userId });
+    // Remove all devices for this user
+    await PushSubscription.deleteMany({ userId });
     return NextResponse.json({ success: true, message: 'Subscription removed' });
   } catch (error) {
     console.error('Error deleting subscription:', error);

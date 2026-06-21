@@ -2,15 +2,22 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useUser, UserButton } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
+import { DynamicUserButton } from '@/app/components/DynamicUserButton';
 import { toast } from 'react-hot-toast';
-import { Zap } from 'lucide-react';
+import { ArrowLeft, User, Zap, Bell, Info } from 'lucide-react';
 import { useSubscription } from '@/app/hooks/useSubscription';
 import {
   useNotificationStatus,
   useUpdateNotificationPreferences,
   useDeleteNotificationSubscription,
 } from '@/app/hooks/useNotifications';
+import { cn } from '@/app/lib/utils';
+import { Button } from '@/app/components/ui/button';
+import { Badge } from '@/app/components/ui/badge';
+import { Input } from '@/app/components/ui/input';
+import { Separator } from '@/app/components/ui/separator';
+import { Label } from '@/app/components/ui/label';
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -75,59 +82,73 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="animate-spin w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 py-6 sm:py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <Link href="/dashboard" className="text-blue-400 hover:text-blue-300 flex items-center gap-2 transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to Dashboard
+    <div className="min-h-screen bg-background">
+      {/* Top nav */}
+      <header className="sticky top-0 z-40 border-b border-border/50 bg-background/95 backdrop-blur">
+        <div className="px-4 h-14 flex items-center justify-between">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Dashboard
           </Link>
-          <UserButton />
+          <span className="text-sm font-medium text-foreground">Settings</span>
+          <DynamicUserButton />
+        </div>
+      </header>
+
+      {/* Main content */}
+      <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
+
+        {/* Account section */}
+        <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
+          <div className="px-6 py-4 border-b border-border/50">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-semibold text-foreground">Account</h2>
+            </div>
+          </div>
+          <div className="p-6">
+            <p className="text-sm text-muted-foreground">
+              {user?.primaryEmailAddress?.emailAddress ?? 'No email'}
+            </p>
+          </div>
         </div>
 
-        <h1 className="text-3xl font-bold text-white mb-8">Settings</h1>
-
-        <div className="space-y-6">
-          {/* Account info */}
-          {user && (
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-              <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Account
-              </h2>
-              <p className="text-slate-400 text-sm">
-                {user.primaryEmailAddress?.emailAddress ?? 'No email'}
-              </p>
+        {/* Subscription section */}
+        <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
+          <div className="px-6 py-4 border-b border-border/50">
+            <div className="flex items-center gap-2">
+              <Zap className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-semibold text-foreground">Subscription</h2>
             </div>
-          )}
-
-          {/* Subscription */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-              <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              Account Tier
-            </h2>
-            <div className="flex items-center justify-between p-4 bg-slate-900/50 rounded-lg border border-slate-700">
-              <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isPremium ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-slate-800 border border-slate-700'}`}>
-                  <Zap className={`w-5 h-5 ${isPremium ? 'text-blue-400' : 'text-slate-500'}`} />
+          </div>
+          <div className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div
+                  className={cn(
+                    'rounded-lg p-2',
+                    isPremium
+                      ? 'bg-primary/10 text-primary'
+                      : 'bg-zinc-800 text-zinc-400'
+                  )}
+                >
+                  <Zap className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-white font-bold">{isPremium ? 'Premium Plan' : 'Free Plan'}</p>
-                  <p className="text-slate-400 text-sm">
+                  <p className="text-sm font-medium text-foreground">
+                    {isPremium ? 'Premium Plan' : 'Free Plan'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
                     {isPremium
                       ? subscription?.currentPeriodEnd
                         ? `Renews ${new Date(subscription.currentPeriodEnd).toLocaleDateString()}`
@@ -136,87 +157,105 @@ export default function SettingsPage() {
                   </p>
                 </div>
               </div>
-              {!isPremium && (
+              {!isPremium ? (
                 <Link
                   href="/pricing"
-                  className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                  className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground h-8 px-3 text-xs font-medium hover:bg-primary/90 transition-colors"
                 >
-                  UPGRADE
+                  Upgrade
                 </Link>
+              ) : (
+                <Badge variant="success">
+                  {subscription?.currentPeriodEnd
+                    ? `Renews ${new Date(subscription.currentPeriodEnd).toLocaleDateString()}`
+                    : 'Active'}
+                </Badge>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Notifications */}
-          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
-            <h2 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
-              <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              Push Notifications
-            </h2>
-
+        {/* Notifications section */}
+        <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
+          <div className="px-6 py-4 border-b border-border/50">
+            <div className="flex items-center gap-2">
+              <Bell className="h-4 w-4 text-primary" />
+              <h2 className="text-sm font-semibold text-foreground">Notifications</h2>
+            </div>
+          </div>
+          <div className="p-6">
             {!isPremium ? (
-              <div className="bg-blue-900/20 border border-blue-500/50 rounded-lg p-4">
-                <p className="text-blue-200 text-sm">
-                  Notifications are a Pro feature. Upgrade to enable daily reminders.
-                </p>
-                <Link href="/pricing" className="mt-3 inline-block text-blue-400 hover:text-blue-300 text-sm font-semibold">
-                  View Pricing →
-                </Link>
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 flex gap-3">
+                <Info className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <div className="text-sm text-muted-foreground">
+                  Push notifications are a Pro feature.{' '}
+                  <Link href="/pricing" className="text-primary hover:underline font-medium">
+                    Upgrade to Pro
+                  </Link>
+                  {' '}to enable daily reminders.
+                </div>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-4">
+                {/* Status row */}
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-white font-medium">Notification Status</p>
-                    <p className="text-slate-400 text-sm">
-                      {isSubscribed ? 'Notifications are enabled' : 'Notifications are currently disabled'}
-                    </p>
-                  </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${isSubscribed ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}`}>
-                    {isSubscribed ? 'ACTIVE' : 'INACTIVE'}
-                  </span>
+                  <span className="text-sm text-foreground">Status</span>
+                  <Badge variant={isSubscribed ? 'success' : 'secondary'}>
+                    {isSubscribed ? 'Enabled' : 'Disabled'}
+                  </Badge>
                 </div>
 
                 {isSubscribed && (
                   <>
-                    <div>
-                      <label className="block text-sm font-medium text-slate-300 mb-2">
-                        Preferred Reminder Time
-                      </label>
-                      <input
+                    <Separator />
+
+                    {/* Time input row */}
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="shrink-0">
+                        <Label htmlFor="reminder-time" className="text-sm text-foreground">
+                          Reminder time
+                        </Label>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Currently sent at 9:00 AM IST daily
+                        </p>
+                      </div>
+                      <Input
+                        id="reminder-time"
                         type="time"
                         value={preferredTime}
-                        onChange={(e) => setPreferredTime(e.target.value)}
-                        className="w-full max-w-xs bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPreferredTime(e.target.value)}
+                        className="max-w-xs opacity-50 cursor-not-allowed"
+                        disabled
+                        title="Per-user reminder time is coming soon"
                       />
-                      <p className="mt-2 text-xs text-slate-500">
-                        Your daily reminder will arrive around this time.
-                      </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <button
+                    {/* Action buttons */}
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      <Button
+                        variant="default"
+                        size="sm"
                         onClick={handleSave}
-                        disabled={updatePrefs.isPending}
-                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 text-white font-semibold py-2 px-6 rounded-lg transition-all"
+                        disabled
+                        title="Reminder time settings coming soon"
                       >
-                        {updatePrefs.isPending ? 'Saving…' : 'Save Preferences'}
-                      </button>
-                      <button
+                        Save
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={sendTestNotification}
-                        className="border border-slate-600 hover:bg-slate-700 text-white font-semibold py-2 px-6 rounded-lg transition-all"
                       >
-                        Send Test Notification
-                      </button>
-                      <button
+                        Test notification
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
                         onClick={handleUnsubscribe}
                         disabled={deleteNotifSub.isPending}
-                        className="border border-red-500/50 hover:bg-red-900/20 text-red-400 font-semibold py-2 px-6 rounded-lg transition-all"
                       >
-                        {deleteNotifSub.isPending ? 'Disabling…' : 'Disable Notifications'}
-                      </button>
+                        {deleteNotifSub.isPending ? 'Disabling…' : 'Disable'}
+                      </Button>
                     </div>
                   </>
                 )}
@@ -224,7 +263,8 @@ export default function SettingsPage() {
             )}
           </div>
         </div>
-      </div>
+
+      </main>
     </div>
   );
 }

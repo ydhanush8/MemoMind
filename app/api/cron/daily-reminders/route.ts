@@ -70,13 +70,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: 'All users already practiced today', processed: 0 });
   }
 
-  // 4. Batch-fetch push subscriptions for those users
+  // 4. Batch-fetch push subscriptions for those users (only those who want daily reminders)
   const pushSubs = await PushSubscription.find(
-    { userId: { $in: needsReminder }, enabled: true },
-    { userId: 1, subscription: 1 }
+    {
+      userId: { $in: needsReminder },
+      enabled: true,
+      'notificationTypes.dailyReminder': true,
+    },
+    { userId: 1, endpoint: 1, subscription: 1 }
   ).lean();
 
-  const subMap = new Map(pushSubs.map((ps) => [ps.userId as string, ps.subscription]));
+  // Group subscriptions by userId — one user may have multiple devices
+  const subMap = new Map<string, { endpoint: string; subscription: unknown }[]>();
+  for (const ps of pushSubs) {
+    const uid = ps.userId as string;
+    if (!subMap.has(uid)) subMap.set(uid, []);
+    subMap.get(uid)!.push({ endpoint: ps.endpoint as string, subscription: ps.subscription });
+  }
 
   const payload = JSON.stringify({
     title: NOTIFICATION_TITLE,
@@ -88,27 +98,32 @@ export async function GET(request: NextRequest) {
 
   // 5. Send notifications in parallel batches (queue pattern — avoids Vercel timeout)
   const results: { userId: string; status: string; error?: string }[] = [];
-  const expiredUserIds: string[] = [];
+  const expiredEndpoints: string[] = [];
 
   for (let i = 0; i < needsReminder.length; i += BATCH_SIZE) {
     const batch = needsReminder.slice(i, i + BATCH_SIZE);
 
     const batchResults = await Promise.allSettled(
       batch.map(async (userId) => {
-        const sub = subMap.get(userId);
-        if (!sub) return { userId, status: 'not_subscribed' };
+        const devices = subMap.get(userId);
+        if (!devices?.length) return { userId, status: 'not_subscribed' };
 
-        try {
-          await webpush.sendNotification(sub as webpush.PushSubscription, payload);
-          return { userId, status: 'sent' };
-        } catch (err: unknown) {
-          const status = (err as { statusCode?: number }).statusCode;
-          if (status === 410 || status === 404) {
-            expiredUserIds.push(userId);
-            return { userId, status: 'expired' };
-          }
-          return { userId, status: 'failed', error: (err as Error).message };
-        }
+        let sent = 0;
+        await Promise.allSettled(
+          devices.map(async ({ endpoint, subscription }) => {
+            try {
+              await webpush.sendNotification(subscription as webpush.PushSubscription, payload);
+              sent++;
+            } catch (err: unknown) {
+              const status = (err as { statusCode?: number }).statusCode;
+              if (status === 410 || status === 404) {
+                expiredEndpoints.push(endpoint);
+              }
+            }
+          })
+        );
+
+        return { userId, status: sent > 0 ? 'sent' : 'failed' };
       })
     );
 
@@ -118,8 +133,8 @@ export async function GET(request: NextRequest) {
   }
 
   // 6. Clean up expired subscriptions in bulk
-  if (expiredUserIds.length > 0) {
-    await PushSubscription.deleteMany({ userId: { $in: expiredUserIds } });
+  if (expiredEndpoints.length > 0) {
+    await PushSubscription.deleteMany({ endpoint: { $in: expiredEndpoints } });
   }
 
   return NextResponse.json({
@@ -127,7 +142,7 @@ export async function GET(request: NextRequest) {
     processed: results.length,
     sent: results.filter((r) => r.status === 'sent').length,
     skipped: results.filter((r) => r.status === 'not_subscribed').length,
-    expired: expiredUserIds.length,
+    expired: expiredEndpoints.length,
     failed: results.filter((r) => r.status === 'failed').length,
   });
 }

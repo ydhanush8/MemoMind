@@ -2,12 +2,24 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { UserButton } from '@clerk/nextjs';
+import { SignInButton, useAuth } from '@clerk/nextjs';
+import { DynamicUserButton } from '@/app/components/DynamicUserButton';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { trackSubscriptionStarted } from '@/app/lib/analytics';
 import { toast } from 'react-hot-toast';
 import { useSubscription } from '@/app/hooks/useSubscription';
+import { ArrowLeft, CheckCircle2, Check, X } from 'lucide-react';
+import { cn } from '@/app/lib/utils';
+import { Button } from '@/app/components/ui/button';
+import { Separator } from '@/app/components/ui/separator';
+import { Input } from '@/app/components/ui/input';
+import {
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/app/components/ui/dialog';
 
 declare global {
   interface Window {
@@ -18,6 +30,7 @@ declare global {
 export default function PricingPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { isSignedIn } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
   const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -54,6 +67,12 @@ export default function PricingPage() {
   }, []);
 
   const handleUpgrade = async () => {
+    if (!isSignedIn) {
+      // Not logged in — the SignInButton wrapper handles this case; this is a safety net
+      router.push('/sign-in');
+      return;
+    }
+
     if (!window.Razorpay) {
       setError('Payment system is loading. Please wait a moment and try again.');
       return;
@@ -161,7 +180,7 @@ export default function PricingPage() {
           escape: false, // Prevent accidental dismiss
         },
         prefill: { name: '', email: '' },
-        theme: { color: '#3B82F6' },
+        theme: { color: '#6366F1' },
       };
 
       const razorpay = new window.Razorpay(options);
@@ -213,292 +232,319 @@ export default function PricingPage() {
 
   if (subscriptionStatus?.isPremium) {
     return (
-      <div className="min-h-screen bg-slate-900 py-12 px-4">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-8">
-            <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <h1 className="text-3xl font-bold text-white mb-2">You&apos;re on Pro</h1>
-            <p className="text-slate-400 mb-6">Enjoy all premium features</p>
-            <Link
-              href="/dashboard"
-              className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
-            >
-              Go to Dashboard
-            </Link>
+      <div className="min-h-screen bg-background py-12 px-4">
+        {/* Nav */}
+        <div className="max-w-6xl mx-auto flex items-center justify-between mb-12">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </Link>
+          <DynamicUserButton />
+        </div>
+
+        <div className="bg-card border border-border/50 rounded-xl p-12 max-w-md mx-auto text-center mt-20">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
+            <CheckCircle2 className="w-8 h-8 text-emerald-400" />
           </div>
+          <h1 className="text-2xl font-semibold text-foreground">You&apos;re on Pro</h1>
+          <p className="text-muted-foreground mt-2 mb-8">Enjoy all premium features</p>
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground px-6 py-2.5 text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            Go to Dashboard
+          </Link>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 py-6 sm:py-12 px-4">
+    <div className="min-h-screen bg-background py-6 sm:py-12 px-4">
       <div className="max-w-6xl mx-auto">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-8">
+        {/* Nav */}
+        <div className="flex items-center justify-between mb-12">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 transition-colors"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors text-sm"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-              />
-            </svg>
-            Back to Dashboard
+            <ArrowLeft className="w-4 h-4" />
+            Back
           </Link>
-          <UserButton />
+          <DynamicUserButton />
         </div>
 
-        <div className="text-center mb-12">
-          <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">
-            Upgrade to <span className="text-blue-400">Premium</span>
-          </h1>
-          <p className="text-lg sm:text-xl text-slate-400 mb-6">
+        {/* Header */}
+        <div className="text-center mb-12 max-w-2xl mx-auto">
+          <p className="text-primary font-medium text-sm tracking-wider uppercase">Pricing</p>
+          <h1 className="text-4xl font-bold text-foreground mt-2">Simple, transparent pricing</h1>
+          <p className="text-muted-foreground text-lg mt-3">
             Unlock AI-powered learning and never forget again
           </p>
-          
-          {/* Currency Toggle */}
-          <div className="flex justify-center gap-2 mb-4">
-            <button
-              onClick={() => setCurrency('INR')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all text-sm ${
-                currency === 'INR'
-                  ? 'bg-slate-700 text-white'
-                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50'
-              }`}
-            >
-              INR (₹)
-            </button>
-            <button
-              onClick={() => setCurrency('USD')}
-              className={`px-4 py-2 rounded-lg font-medium transition-all text-sm ${
-                currency === 'USD'
-                  ? 'bg-slate-700 text-white'
-                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-700/50'
-              }`}
-            >
-              USD ($)
-            </button>
-          </div>
         </div>
 
-        <div className="flex justify-center gap-3 mb-12">
+        {/* Currency Toggle */}
+        <div className="flex gap-1 justify-center mb-6 bg-secondary rounded-lg p-1 w-fit mx-auto">
+          <button
+            onClick={() => setCurrency('INR')}
+            className={cn(
+              'px-4 py-1.5 text-sm font-medium rounded-md transition-all',
+              currency === 'INR'
+                ? 'bg-background shadow-sm text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            INR (₹)
+          </button>
+          <button
+            onClick={() => setCurrency('USD')}
+            className={cn(
+              'px-4 py-1.5 text-sm font-medium rounded-md transition-all',
+              currency === 'USD'
+                ? 'bg-background shadow-sm text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            USD ($)
+          </button>
+        </div>
+
+        {/* Billing Toggle */}
+        <div className="flex gap-1 justify-center mb-12 bg-secondary rounded-lg p-1 w-fit mx-auto">
           <button
             onClick={() => setSelectedPlan('monthly')}
-            className={`px-6 py-2 rounded-lg font-medium transition-all ${
+            className={cn(
+              'px-4 py-1.5 text-sm font-medium rounded-md transition-all',
               selectedPlan === 'monthly'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
+                ? 'bg-background shadow-sm text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
           >
             Monthly
           </button>
           <button
             onClick={() => setSelectedPlan('yearly')}
-            className={`px-6 py-2 rounded-lg font-medium transition-all relative ${
+            className={cn(
+              'relative px-4 py-1.5 text-sm font-medium rounded-md transition-all',
               selectedPlan === 'yearly'
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-            }`}
+                ? 'bg-background shadow-sm text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
           >
             Yearly
-            <span className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">
+            <span className="absolute -top-2.5 -right-2 bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-medium leading-none whitespace-nowrap">
               Save {pricing[currency].symbol}{pricing[currency].yearlyDiscount}
             </span>
           </button>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-8">
-            <h3 className="text-2xl font-bold text-white mb-2">Free</h3>
-            <div className="text-4xl font-bold text-white mb-6">{pricing[currency].symbol}0</div>
-            <ul className="space-y-4 mb-8">
-              <li className="flex items-start gap-3 text-slate-300">
-                <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                Create unlimited notes
-              </li>
-              <li className="flex items-start gap-3 text-slate-300">
-                <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                View and edit notes
-              </li>
-              <li className="flex items-start gap-3 text-slate-500">
-                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                No AI Analysis
-              </li>
-              <li className="flex items-start gap-3 text-slate-500">
-                <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                No Daily Practice
-              </li>
+        {/* Pricing Cards */}
+        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+
+          {/* Free Card */}
+          <div className="rounded-xl border border-border/50 bg-card p-8 flex flex-col">
+            <div>
+              <p className="text-lg font-semibold text-foreground">Free</p>
+              <p className="text-4xl font-bold text-foreground mt-2">{pricing[currency].symbol}0</p>
+              <p className="text-sm text-muted-foreground mt-1">Free forever</p>
+            </div>
+
+            <Separator className="mt-6 mb-6" />
+
+            <ul className="space-y-3 flex-1">
+              {[
+                { text: 'Create unlimited notes', included: true },
+                { text: 'View and edit notes', included: true },
+                { text: 'AI Analysis', included: false },
+                { text: 'Daily Practice', included: false },
+              ].map((item) => (
+                <li key={item.text} className="flex items-start gap-3">
+                  {item.included ? (
+                    <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                  ) : (
+                    <X className="w-4 h-4 text-muted-foreground/50 flex-shrink-0 mt-0.5" />
+                  )}
+                  <span className={cn('text-sm', item.included ? 'text-foreground' : 'text-muted-foreground')}>
+                    {item.text}
+                  </span>
+                </li>
+              ))}
             </ul>
+
+            <div className="mt-8">
+              <Button variant="outline" className="w-full" disabled>
+                Current Plan
+              </Button>
+            </div>
           </div>
 
-          <div className="bg-gradient-to-br from-blue-900/50 to-purple-900/50 border-2 border-blue-500/50 rounded-2xl p-8 relative">
-            <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">
-              Recommended
-            </div>
-            <h3 className="text-2xl font-bold text-white mb-2">Premium</h3>
-            <div className="mb-6">
-              <div className="text-4xl font-bold text-white">
+          {/* Premium Card */}
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-8 relative flex flex-col">
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs px-3 py-1 rounded-full font-medium">
+              Most Popular
+            </span>
+
+            <div>
+              <p className="text-lg font-semibold text-foreground">Premium</p>
+              <p className="text-4xl font-bold text-foreground mt-2">
                 {pricing[currency].symbol}{selectedPlan === 'monthly' ? pricing[currency].monthly : pricing[currency].yearly}
-              </div>
-              <div className="text-slate-400">
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
                 {selectedPlan === 'monthly' ? 'per month' : 'per year'}
-              </div>
+              </p>
             </div>
-            <ul className="space-y-4 mb-8">
-              <li className="flex items-start gap-3 text-white">
-                <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                Everything in Free +
-              </li>
-              <li className="flex items-start gap-3 text-white">
-                <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                AI Analysis - Instant feedback
-              </li>
-              <li className="flex items-start gap-3 text-white">
-                <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                Daily Practice with flip cards
-              </li>
-              <li className="flex items-start gap-3 text-white">
-                <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                Review tracking & statistics
-              </li>
+
+            <Separator className="mt-6 mb-6" />
+
+            <ul className="space-y-3 flex-1">
+              {[
+                'Everything in Free',
+                'AI Analysis — instant feedback',
+                'Daily Practice with flip cards',
+                'Review tracking & statistics',
+              ].map((feature) => (
+                <li key={feature} className="flex items-start gap-3">
+                  <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-foreground">{feature}</span>
+                </li>
+              ))}
             </ul>
-            <button
-              onClick={handleUpgrade}
-              disabled={isProcessing}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg disabled:opacity-50"
-            >
-              {isProcessing ? 'Processing...' : 'Upgrade Now'}
-            </button>
-            <p className="text-xs text-slate-400 text-center mt-4">Cancel anytime</p>
+
+            <div className="mt-8">
+              {isSignedIn ? (
+                <Button
+                  variant="default"
+                  className="w-full"
+                  onClick={handleUpgrade}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? 'Processing...' : 'Upgrade Now'}
+                </Button>
+              ) : (
+                <SignInButton mode="modal">
+                  <Button variant="default" className="w-full">
+                    Sign in to Upgrade
+                  </Button>
+                </SignInButton>
+              )}
+              <p className="text-xs text-muted-foreground text-center mt-3">Cancel anytime</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Restore subscription banner for users who already paid */}
-      <div className="max-w-4xl mx-auto mt-8 px-4 pb-12">
-        <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <p className="text-white font-medium text-sm">Already paid but still showing Free?</p>
-              <p className="text-slate-400 text-xs mt-0.5">
-                If your Razorpay payment succeeded but the app didn&apos;t activate — click Restore. No charge.
-              </p>
-            </div>
-            <button
-              onClick={() => handleRestore()}
-              disabled={isRestoring}
-              className="flex-shrink-0 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white font-semibold py-2 px-5 rounded-lg text-sm transition-all whitespace-nowrap"
-            >
-              {isRestoring ? (
-                <span className="flex items-center gap-2">
-                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Restoring…
-                </span>
-              ) : (
-                'Restore Subscription'
-              )}
-            </button>
-          </div>
-
-          {/* Manual restore fallback — shown when automatic search fails */}
-          {showManualRestore && (
-            <div className="mt-4 pt-4 border-t border-slate-700">
-              <p className="text-slate-300 text-sm mb-2">
-                Enter your <strong>Razorpay Subscription ID</strong> from your payment receipt email
-                (starts with <code className="text-blue-400">sub_</code>):
-              </p>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={manualSubId}
-                  onChange={(e) => setManualSubId(e.target.value)}
-                  placeholder="sub_xxxxxxxxxxxxxxxxxx"
-                  className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  onClick={() => {
-                    if (manualSubId.trim()) handleRestore(manualSubId.trim());
-                  }}
-                  disabled={isRestoring || !manualSubId.trim()}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-all whitespace-nowrap"
-                >
-                  {isRestoring ? 'Restoring…' : 'Restore'}
-                </button>
+        {/* Restore Section */}
+        <div className="mt-8 max-w-4xl mx-auto pb-12">
+          <div className="rounded-xl border border-border/50 bg-card p-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-medium text-foreground">
+                  Already paid but showing Free?
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  If your Razorpay payment succeeded but the app didn&apos;t activate — click Restore. No charge.
+                </p>
               </div>
-              <p className="text-slate-500 text-xs mt-2">
-                Find this in your Razorpay receipt email or at razorpay.com → Dashboard → Subscriptions.
-              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleRestore()}
+                disabled={isRestoring}
+                className="flex-shrink-0 whitespace-nowrap"
+              >
+                {isRestoring ? (
+                  <span className="flex items-center gap-2">
+                    <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Restoring…
+                  </span>
+                ) : (
+                  'Restore Subscription'
+                )}
+              </Button>
             </div>
-          )}
+
+            {/* Manual restore fallback */}
+            {showManualRestore && (
+              <div className="mt-4 pt-4 border-t border-border/50">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Enter your <span className="font-medium text-foreground">Razorpay Subscription ID</span> from your payment receipt email
+                  (starts with <code className="text-primary text-xs">sub_</code>):
+                </p>
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    value={manualSubId}
+                    onChange={(e) => setManualSubId(e.target.value)}
+                    placeholder="sub_xxxxxxxxxxxxxxxxxx"
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => {
+                      if (manualSubId.trim()) handleRestore(manualSubId.trim());
+                    }}
+                    disabled={isRestoring || !manualSubId.trim()}
+                    className="whitespace-nowrap"
+                  >
+                    {isRestoring ? 'Restoring…' : 'Restore'}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Find this in your Razorpay receipt email or at razorpay.com → Dashboard → Subscriptions.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Error Modal */}
       {error && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 border border-red-500/50 rounded-2xl p-6 max-w-md w-full mx-4 animate-fadeIn">
-            <div className="flex items-start gap-4 mb-5">
-              <div className="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setError(null)} />
+          <div className="relative z-10 w-full max-w-md rounded-xl border border-border/50 bg-card shadow-2xl p-6">
+            <DialogHeader className="p-0 pb-4">
+              <div className="flex items-start gap-4">
+                <div className="w-9 h-9 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0">
+                  <X className="w-4 h-4 text-red-400" />
+                </div>
+                <div className="flex-1">
+                  <DialogTitle className="text-foreground">Issue with Payment</DialogTitle>
+                  <DialogDescription className="mt-1 text-sm leading-relaxed">
+                    {error}
+                  </DialogDescription>
+                </div>
               </div>
-              <div className="flex-1">
-                <h3 className="text-lg font-bold text-white mb-1">Issue with Payment</h3>
-                <p className="text-slate-300 text-sm leading-relaxed">{error}</p>
-              </div>
-            </div>
+            </DialogHeader>
 
-            {/* If the error mentions Razorpay charging, show restore button prominently */}
-            {(error.toLowerCase().includes('razorpay') ||
-              error.toLowerCase().includes('charged') ||
-              error.toLowerCase().includes('restore')) && (
-              <button
-                onClick={() => {
-                  setError(null);
-                  handleRestore();
-                }}
-                disabled={isRestoring}
-                className="w-full mb-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-6 rounded-lg transition-all"
+            <div className="space-y-2">
+              {/* If the error mentions Razorpay charging, show restore button prominently */}
+              {(error.toLowerCase().includes('razorpay') ||
+                error.toLowerCase().includes('charged') ||
+                error.toLowerCase().includes('restore')) && (
+                <Button
+                  variant="default"
+                  className="w-full"
+                  onClick={() => {
+                    setError(null);
+                    handleRestore();
+                  }}
+                  disabled={isRestoring}
+                >
+                  {isRestoring ? 'Restoring…' : 'Restore Subscription (No Charge)'}
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => setError(null)}
               >
-                {isRestoring ? 'Restoring…' : 'Restore Subscription (No Charge)'}
-              </button>
-            )}
-
-            <button
-              onClick={() => setError(null)}
-              className="w-full bg-slate-700 hover:bg-slate-600 text-white font-semibold py-2.5 px-6 rounded-lg transition-all"
-            >
-              Close
-            </button>
+                Close
+              </Button>
+            </div>
           </div>
         </div>
       )}

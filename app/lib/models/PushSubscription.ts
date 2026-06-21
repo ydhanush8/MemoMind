@@ -6,6 +6,11 @@ const PushSubscriptionSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
+  // Stored separately for compound-index queries; mirrors subscription.endpoint
+  endpoint: {
+    type: String,
+    required: true,
+  },
   subscription: {
     type: Object,
     required: true,
@@ -37,6 +42,9 @@ const PushSubscriptionSchema = new mongoose.Schema({
     default: Date.now,
   },
 });
+
+// Unique compound index — one subscription document per (user, device endpoint)
+PushSubscriptionSchema.index({ userId: 1, endpoint: 1 }, { unique: true });
 
 // Update timestamp on save
 PushSubscriptionSchema.pre('save', function (next) {

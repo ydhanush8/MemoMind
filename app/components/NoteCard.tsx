@@ -1,9 +1,20 @@
 'use client';
 
 import React from 'react';
-import { Trash2, ChevronDown, ExternalLink, Sparkles, X, FileText } from 'lucide-react';
+import { Trash2, ExternalLink, Sparkles, X, FileText } from 'lucide-react';
 import type { Note } from '@/app/lib/types';
 import AnalysisResult from './AnalysisResult';
+import { cn } from '@/app/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/app/components/ui/dialog';
+import { Badge } from '@/app/components/ui/badge';
+import { Button } from '@/app/components/ui/button';
 
 interface NoteCardProps {
   note: Note;
@@ -39,98 +50,80 @@ export default function NoteCard({ note, onDelete }: NoteCardProps) {
 
   return (
     <>
+      {/* Card */}
       <div
-        className={`bg-slate-800/50 border border-slate-700 hover:border-slate-600 rounded-xl p-6 transition-all duration-200 ${
-          isDeleting ? 'opacity-0 scale-95' : 'opacity-100 scale-100'
-        }`}
+        className={cn(
+          'group relative rounded-xl border border-border/50 bg-card p-5 transition-all duration-200 hover:bg-secondary/30 hover:border-border',
+          isDeleting && 'opacity-0 scale-95'
+        )}
       >
         {/* Header */}
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <h3 className="text-base font-semibold text-white flex-1 line-clamp-2 leading-snug">
+        <div className="flex items-start justify-between gap-3">
+          <h3 className="text-sm font-semibold text-foreground line-clamp-2 leading-snug flex-1">
             {note.title}
           </h3>
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="text-slate-500 hover:text-red-400 transition-colors p-1 rounded"
+            className="flex-shrink-0 p-1 rounded text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive transition-all duration-150"
             aria-label="Delete note"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="h-3.5 w-3.5" />
           </button>
         </div>
 
         {/* Meta row */}
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <span className="text-xs text-slate-500">{formatDate(note.createdAt)}</span>
+        <div className="flex items-center gap-2 mt-2 mb-3 flex-wrap">
+          <span className="text-xs text-muted-foreground">{formatDate(note.createdAt)}</span>
           {note.analysis && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-violet-500/10 border border-violet-500/30 text-violet-400 text-xs rounded-md">
-              <Sparkles className="w-3 h-3" />
+            <Badge variant="default" className="gap-1 px-1.5 py-0 text-[11px]">
+              <Sparkles className="h-2.5 w-2.5" />
               Analyzed
-            </span>
+            </Badge>
           )}
           {note.reviewCount !== undefined && note.reviewCount > 0 && (
-            <span className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs rounded-md">
-              {note.reviewCount}× reviewed
-            </span>
+            <Badge variant="secondary" className="px-1.5 py-0 text-[11px]">
+              {note.reviewCount}&times;
+            </Badge>
           )}
         </div>
 
-        {/* Content */}
-        <p className="text-slate-400 text-sm leading-relaxed mb-3 whitespace-pre-wrap">
-          {showFull ? note.understanding : truncatedText}
+        {/* Content — always clamped to 3 lines; no expand on card */}
+        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+          {truncatedText}
         </p>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3">
-          {note.understanding.length > 150 && (
-            <button
-              onClick={() => setShowFull(!showFull)}
-              className="text-slate-500 hover:text-slate-300 text-xs font-medium flex items-center gap-1 transition-colors"
-            >
-              {showFull ? 'Show less' : 'Read more'}
-              <ChevronDown className={`w-3 h-3 transition-transform ${showFull ? 'rotate-180' : ''}`} />
-            </button>
-          )}
+        {/* Footer */}
+        <div className="border-t border-border/30 mt-4 pt-3 flex items-center justify-end">
           <button
             onClick={() => setShowModal(true)}
-            className="ml-auto text-slate-500 hover:text-slate-300 text-xs font-medium flex items-center gap-1 transition-colors"
+            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
           >
-            {note.analysis ? 'View details' : 'View note'}
-            <ExternalLink className="w-3 h-3" />
+            View details
+            <ExternalLink className="h-3 w-3" />
           </button>
         </div>
       </div>
 
-      {/* Delete Confirmation */}
-      {showDeleteConfirm && (
-        <div
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={() => setShowDeleteConfirm(false)}
-        >
-          <div
-            className="bg-slate-900 border border-slate-700 rounded-xl max-w-sm w-full p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-base font-semibold text-white mb-1">Delete note?</h3>
-            <p className="text-slate-400 text-sm mb-5">
-              &quot;<span className="text-slate-300">{note.title}</span>&quot; will be permanently removed.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 bg-slate-800 hover:bg-slate-700 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition-all border border-slate-700"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white text-sm font-medium py-2.5 px-4 rounded-lg transition-all"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Delete Confirm Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent onClose={() => setShowDeleteConfirm(false)} className="max-w-sm">
+          <DialogHeader className="pb-4">
+            <DialogTitle>Delete note?</DialogTitle>
+            <DialogDescription className="mt-1.5">
+              &quot;<span className="text-foreground">{note.title}</span>&quot; will be permanently
+              removed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="pt-2">
+            <Button variant="secondary" onClick={() => setShowDeleteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Full Note Modal */}
       {showModal && (
@@ -139,28 +132,32 @@ export default function NoteCard({ note, onDelete }: NoteCardProps) {
           onClick={() => setShowModal(false)}
         >
           <div
-            className="bg-slate-900 border border-slate-700 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            className="relative z-10 w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col rounded-xl border border-border/50 bg-card shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal header */}
-            <div className="border-b border-slate-800 p-5 flex items-center justify-between flex-shrink-0">
-              <h2 className="text-lg font-semibold text-white pr-4 line-clamp-1">{note.title}</h2>
+            <div className="border-b border-border/50 px-6 py-4 flex items-center justify-between flex-shrink-0">
+              <h2 className="text-base font-semibold text-foreground pr-4 line-clamp-1">
+                {note.title}
+              </h2>
               <button
                 onClick={() => setShowModal(false)}
-                className="text-slate-500 hover:text-white transition-colors flex-shrink-0"
+                className="flex-shrink-0 p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Close"
               >
-                <X className="w-5 h-5" />
+                <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="p-5 space-y-5 overflow-y-auto">
-              {/* Note content */}
-              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-5">
-                <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <FileText className="w-3.5 h-3.5" />
+            {/* Modal body */}
+            <div className="p-6 space-y-5 overflow-y-auto">
+              {/* What I Learned */}
+              <div className="bg-secondary/50 rounded-lg p-4">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <FileText className="h-3.5 w-3.5" />
                   What I Learned
                 </h3>
-                <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
+                <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
                   {note.understanding}
                 </p>
               </div>
@@ -168,8 +165,8 @@ export default function NoteCard({ note, onDelete }: NoteCardProps) {
               {/* AI Analysis */}
               {note.analysis && (
                 <div>
-                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5" />
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <Sparkles className="h-3.5 w-3.5" />
                     AI Analysis
                   </h3>
                   <AnalysisResult analysis={note.analysis} />
