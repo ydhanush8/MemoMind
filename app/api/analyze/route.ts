@@ -9,7 +9,7 @@ const DAILY_LIMIT = 50;
 const TITLE_MAX = 200;
 const UNDERSTANDING_MAX = 10_000;
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions';
-const MODEL = 'google/gemini-2.0-flash-001';
+const MODEL = 'openai/gpt-oss-120b:free';
 
 async function checkRateLimit(userId: string): Promise<boolean> {
   const today = new Date().toISOString().split('T')[0];

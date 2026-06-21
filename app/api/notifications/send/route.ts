@@ -52,8 +52,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Premium subscription required' }, { status: 403 });
   }
 
-  const pushSub = await PushSubscription.findOne({ userId, enabled: true });
-  if (!pushSub?.subscription) {
+  const pushSubs = await PushSubscription.find({ userId, enabled: true });
+  if (!pushSubs.length) {
     return NextResponse.json({ error: 'No active push subscription found' }, { status: 404 });
   }
 
@@ -65,16 +65,30 @@ export async function POST(request: NextRequest) {
     icon: '/icon-192x192.png',
   });
 
-  try {
-    await push.sendNotification(pushSub.subscription as webpush.PushSubscription, payload);
-    return NextResponse.json({ success: true, message: 'Notification sent' });
-  } catch (err: unknown) {
-    const status = (err as { statusCode?: number }).statusCode;
-    if (status === 410 || status === 404) {
-      await PushSubscription.deleteOne({ userId });
-      return NextResponse.json({ error: 'Subscription expired and removed' }, { status: 410 });
-    }
-    console.error('Push send error:', err);
-    return NextResponse.json({ error: 'Failed to send notification' }, { status: 500 });
+  const expiredEndpoints: string[] = [];
+  let sent = 0;
+
+  await Promise.allSettled(
+    pushSubs.map(async (ps) => {
+      try {
+        await push.sendNotification(ps.subscription as webpush.PushSubscription, payload);
+        sent++;
+      } catch (err: unknown) {
+        const status = (err as { statusCode?: number }).statusCode;
+        if (status === 410 || status === 404) {
+          expiredEndpoints.push(ps.endpoint as string);
+        }
+      }
+    })
+  );
+
+  if (expiredEndpoints.length > 0) {
+    await PushSubscription.deleteMany({ userId, endpoint: { $in: expiredEndpoints } });
   }
+
+  if (sent === 0) {
+    return NextResponse.json({ error: 'All subscriptions expired and removed' }, { status: 410 });
+  }
+
+  return NextResponse.json({ success: true, message: `Notification sent to ${sent} device(s)` });
 }
