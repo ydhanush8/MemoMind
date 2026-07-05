@@ -220,7 +220,7 @@ function FloatingPreview() {
           transition={{ duration: 0.5, delay: 1.1, ease }}
           className="hidden sm:flex absolute -top-4 -right-8 items-center gap-1.5 bg-card border border-border/60 rounded-full px-3.5 py-2 shadow-elevation-2"
         >
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="w-1.5 h-1.5 rounded-full bg-success" />
           <span className="text-xs font-semibold text-foreground whitespace-nowrap">Saved</span>
         </motion.div>
 

@@ -232,8 +232,8 @@ export default function PricingPage() {
         </div>
 
         <div className="bg-card border border-border/60 rounded-3xl p-12 max-w-md mx-auto text-center mt-20 shadow-elevation-2">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/12 flex items-center justify-center mx-auto mb-5">
-            <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+          <div className="w-16 h-16 rounded-2xl bg-success/12 flex items-center justify-center mx-auto mb-5">
+            <CheckCircle2 className="w-8 h-8 text-success" />
           </div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight">You&apos;re on Pro</h1>
           <p className="text-muted-foreground mt-2 mb-8">Enjoy every premium feature.</p>
@@ -319,7 +319,7 @@ export default function PricingPage() {
             )}
           >
             Yearly
-            <span className="absolute -top-2.5 -right-2 bg-emerald-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold leading-none whitespace-nowrap">
+            <span className="absolute -top-2.5 -right-2 bg-success text-success-foreground text-[10px] px-1.5 py-0.5 rounded-full font-bold leading-none whitespace-nowrap">
               Save {pricing[currency].symbol}
               {pricing[currency].yearlyDiscount}
             </span>

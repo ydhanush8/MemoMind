@@ -82,7 +82,7 @@ export default function PracticePage() {
       {!isLoading && notes.length === 0 && (
         <div className="flex items-center justify-center py-16">
           <div className="bg-card border border-border/60 rounded-3xl p-12 max-w-sm w-full text-center shadow-elevation-1">
-            <div className="inline-flex items-center justify-center rounded-2xl bg-emerald-500/12 p-4 text-emerald-500 mb-5 mx-auto">
+            <div className="inline-flex items-center justify-center rounded-2xl bg-success/12 p-4 text-success mb-5 mx-auto">
               <CheckCircle2 className="w-8 h-8" />
             </div>
             <h3 className="text-lg font-bold text-foreground mb-2">All caught up!</h3>
@@ -132,7 +132,7 @@ export default function PracticePage() {
             {currentIndex === notes.length - 1 ? (
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 text-sm font-semibold transition-colors shadow-elevation-1"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-success text-success-foreground hover:bg-success/90 px-5 py-2.5 text-sm font-semibold transition-colors shadow-elevation-1"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 Complete Practice

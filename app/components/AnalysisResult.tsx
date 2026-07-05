@@ -30,7 +30,7 @@ export default function AnalysisResult({ analysis }: AnalysisResultProps) {
 
   const difficultyColor =
     analysis.difficulty === 'Easy'
-      ? 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 border-emerald-500/25'
+      ? 'bg-success/12 text-success border-success/25'
       : analysis.difficulty === 'Hard'
         ? 'bg-destructive/12 text-destructive border-destructive/25'
         : 'bg-amber-500/12 text-amber-600 dark:text-amber-400 border-amber-500/25';
@@ -67,15 +67,15 @@ export default function AnalysisResult({ analysis }: AnalysisResultProps) {
       )}
 
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="bg-emerald-500/[0.06] border border-emerald-500/20 rounded-2xl p-5">
+        <div className="bg-success/[0.06] border border-success/20 rounded-2xl p-5">
           <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            <CheckCircle2 className="w-4 h-4 text-success" />
             What You Got Right
           </h3>
           <ul className="space-y-2">
             {keyPoints.map((point, i) => (
               <li key={i} className="text-sm text-foreground/80 leading-relaxed flex gap-2">
-                <span className="text-emerald-500 mt-0.5 shrink-0">–</span>
+                <span className="text-success mt-0.5 shrink-0">–</span>
                 {point}
               </li>
             ))}
