@@ -1,19 +1,19 @@
 export default function NewNoteLoading() {
   return (
-    <div className="min-h-screen bg-background">
-      <div className="sticky top-0 h-14 border-b border-border/50 bg-background" />
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="h-8 w-40 rounded-lg bg-secondary animate-pulse mb-8" />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-36 rounded-xl bg-secondary animate-pulse"
-              style={{ animationDelay: `${i * 50}ms` }}
-            />
-          ))}
+    <>
+      <div className="h-4 w-28 rounded bg-secondary/70 animate-pulse" />
+      <div className="mt-5 space-y-2">
+        <div className="h-8 w-48 rounded-lg bg-secondary animate-pulse" />
+        <div className="h-4 w-72 max-w-full rounded bg-secondary/70 animate-pulse" />
+      </div>
+      <div className="mt-7 max-w-2xl rounded-3xl border border-border/60 bg-card p-6 sm:p-8 shadow-elevation-1 space-y-6">
+        <div className="h-11 w-full rounded-lg bg-secondary animate-pulse" />
+        <div className="h-52 w-full rounded-lg bg-secondary animate-pulse" />
+        <div className="flex gap-3">
+          <div className="h-12 flex-1 rounded-xl bg-secondary animate-pulse" />
+          <div className="h-12 flex-1 rounded-xl bg-secondary animate-pulse" />
         </div>
       </div>
-    </div>
+    </>
   );
 }

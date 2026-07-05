@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
           createdAt: new Date(),
         },
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
     return NextResponse.json({
       success: true,

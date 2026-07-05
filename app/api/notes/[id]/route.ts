@@ -58,12 +58,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const { title, understanding, analysis } = body;
 
   if (title && title.length > TITLE_MAX) {
-    return NextResponse.json({ error: `Title must be under ${TITLE_MAX} characters` }, { status: 400 });
+    return NextResponse.json(
+      { error: `Title must be under ${TITLE_MAX} characters` },
+      { status: 400 },
+    );
   }
   if (understanding && understanding.length > UNDERSTANDING_MAX) {
     return NextResponse.json(
       { error: `Understanding must be under ${UNDERSTANDING_MAX} characters` },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -72,7 +75,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const note = await Note.findOneAndUpdate(
       { _id: id, userId },
       { title, understanding, analysis },
-      { new: true }
+      { new: true },
     );
     if (!note) {
       return NextResponse.json({ error: 'Note not found' }, { status: 404 });
@@ -101,7 +104,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const note = await Note.findOneAndUpdate(
       { _id: id, userId },
       { lastReviewedAt: new Date(), $inc: { reviewCount: 1 } },
-      { new: true }
+      { new: true },
     );
     if (!note) {
       return NextResponse.json({ error: 'Note not found' }, { status: 404 });
@@ -115,7 +118,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
 

@@ -17,11 +17,7 @@ type RzpSub = {
   notes?: Record<string, string>;
 };
 
-async function activateSubscription(
-  userId: string,
-  rzpSub: RzpSub,
-  pendingPlanType?: string
-) {
+async function activateSubscription(userId: string, rzpSub: RzpSub, pendingPlanType?: string) {
   const monthlyPlanId = process.env.RAZORPAY_PLAN_ID_MONTHLY;
   const yearlyPlanId = process.env.RAZORPAY_PLAN_ID_YEARLY;
 
@@ -30,9 +26,9 @@ async function activateSubscription(
       ? 'yearly'
       : rzpSub.plan_id === monthlyPlanId
         ? 'monthly'
-        : (rzpSub.notes?.planType as 'monthly' | 'yearly' | undefined) ??
+        : ((rzpSub.notes?.planType as 'monthly' | 'yearly' | undefined) ??
           (pendingPlanType as 'monthly' | 'yearly' | undefined) ??
-          'monthly';
+          'monthly');
 
   const currentPeriodStart = rzpSub.current_start
     ? new Date(rzpSub.current_start * 1000)
@@ -48,9 +44,7 @@ async function activateSubscription(
       ? rzpPeriodEnd
       : (() => {
           const d = new Date();
-          planType === 'yearly'
-            ? d.setFullYear(d.getFullYear() + 1)
-            : d.setMonth(d.getMonth() + 1);
+          planType === 'yearly' ? d.setFullYear(d.getFullYear() + 1) : d.setMonth(d.getMonth() + 1);
           return d;
         })();
 
@@ -66,7 +60,7 @@ async function activateSubscription(
       currentPeriodStart,
       currentPeriodEnd,
     },
-    { upsert: true, new: true }
+    { upsert: true, new: true },
   );
 
   return { planType, currentPeriodEnd };
@@ -87,7 +81,7 @@ export async function POST(request: NextRequest) {
   // Optional: user can provide their subscription ID manually from Razorpay receipt
   let manualSubscriptionId: string | undefined;
   try {
-    const body = await request.json() as { subscriptionId?: string };
+    const body = (await request.json()) as { subscriptionId?: string };
     manualSubscriptionId = body?.subscriptionId?.trim() || undefined;
   } catch {
     // No body is fine
@@ -117,7 +111,7 @@ export async function POST(request: NextRequest) {
     // Strategy 0: User provided their subscription ID manually
     if (manualSubscriptionId) {
       try {
-        const fetched = await razorpay.subscriptions.fetch(manualSubscriptionId) as RzpSub;
+        const fetched = (await razorpay.subscriptions.fetch(manualSubscriptionId)) as RzpSub;
         logPayment('subscription.restore.attempt', {
           userId,
           razorpaySubscriptionId: manualSubscriptionId,
@@ -127,14 +121,19 @@ export async function POST(request: NextRequest) {
           rzpSub = fetched;
         } else {
           return NextResponse.json(
-            { error: `Subscription found but status is "${fetched.status}". Payment may not have completed yet.` },
-            { status: 400 }
+            {
+              error: `Subscription found but status is "${fetched.status}". Payment may not have completed yet.`,
+            },
+            { status: 400 },
           );
         }
       } catch {
         return NextResponse.json(
-          { error: 'Could not find a Razorpay subscription with that ID. Please check and try again.' },
-          { status: 404 }
+          {
+            error:
+              'Could not find a Razorpay subscription with that ID. Please check and try again.',
+          },
+          { status: 404 },
         );
       }
     }
@@ -142,7 +141,9 @@ export async function POST(request: NextRequest) {
     // Strategy 1: Use subscription ID we saved in DB at create time
     if (!rzpSub && existing?.razorpaySubscriptionId) {
       try {
-        const fetched = await razorpay.subscriptions.fetch(existing.razorpaySubscriptionId) as RzpSub;
+        const fetched = (await razorpay.subscriptions.fetch(
+          existing.razorpaySubscriptionId,
+        )) as RzpSub;
         if (PAID_STATUSES.includes(fetched.status)) {
           rzpSub = fetched;
         }
@@ -153,12 +154,12 @@ export async function POST(request: NextRequest) {
 
     // Strategy 2 & 3: Search Razorpay subscriptions list
     if (!rzpSub) {
-      const result = await razorpay.subscriptions.all({ count: 100 }) as { items?: RzpSub[] };
+      const result = (await razorpay.subscriptions.all({ count: 100 })) as { items?: RzpSub[] };
       const allSubs = result?.items ?? [];
 
       // 2a: Match by userId in notes
       const byUserId = allSubs.filter(
-        (s) => s.notes?.userId === userId && PAID_STATUSES.includes(s.status)
+        (s) => s.notes?.userId === userId && PAID_STATUSES.includes(s.status),
       );
 
       if (byUserId.length > 0) {
@@ -177,14 +178,14 @@ export async function POST(request: NextRequest) {
             'We could not automatically find your subscription. ' +
             'Please enter your Razorpay Subscription ID from your payment receipt email to restore manually.',
         },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const { planType, currentPeriodEnd } = await activateSubscription(
       userId,
       rzpSub,
-      existing?.pendingPlanType
+      existing?.pendingPlanType,
     );
 
     logPayment('subscription.restore.success', {
@@ -203,6 +204,9 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     logPayment('subscription.restore.failure', { userId, error: String(error) });
     console.error('Restore error:', error);
-    return NextResponse.json({ error: 'Failed to restore subscription. Please try again.' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to restore subscription. Please try again.' },
+      { status: 500 },
+    );
   }
 }

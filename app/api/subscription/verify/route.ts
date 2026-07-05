@@ -56,7 +56,10 @@ export async function POST(request: NextRequest) {
     .digest('hex');
 
   if (generatedSignature !== razorpay_signature) {
-    logPayment('subscription.verify.signature_invalid', { userId, razorpaySubscriptionId: razorpay_subscription_id });
+    logPayment('subscription.verify.signature_invalid', {
+      userId,
+      razorpaySubscriptionId: razorpay_subscription_id,
+    });
     return NextResponse.json({ error: 'Invalid payment signature' }, { status: 400 });
   }
 
@@ -69,7 +72,9 @@ export async function POST(request: NextRequest) {
   };
   try {
     const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
-    rzpSubscription = await razorpay.subscriptions.fetch(razorpay_subscription_id) as typeof rzpSubscription;
+    rzpSubscription = (await razorpay.subscriptions.fetch(
+      razorpay_subscription_id,
+    )) as typeof rzpSubscription;
   } catch (err) {
     logPayment('subscription.verify.failure', {
       userId,
@@ -89,7 +94,7 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(
       { error: `Subscription is not active on Razorpay (status: ${rzpSubscription.status})` },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -145,7 +150,7 @@ export async function POST(request: NextRequest) {
         currentPeriodStart,
         currentPeriodEnd,
       },
-      { upsert: true, new: true }
+      { upsert: true, new: true },
     );
   } catch (err) {
     logPayment('subscription.verify.db_failure', {
@@ -155,10 +160,11 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(
       {
-        error: 'Payment verified but failed to activate subscription. Please use Restore Subscription on the pricing page.',
+        error:
+          'Payment verified but failed to activate subscription. Please use Restore Subscription on the pricing page.',
         recoverable: true,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 

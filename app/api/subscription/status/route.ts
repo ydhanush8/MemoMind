@@ -18,9 +18,7 @@ export async function GET() {
       subscription = await Subscription.create({ userId, plan: 'free', status: 'active' });
     }
 
-    const isPremium =
-      subscription.plan === 'premium' &&
-      subscription.status === 'active';
+    const isPremium = subscription.plan === 'premium' && subscription.status === 'active';
 
     return NextResponse.json({
       isPremium,

@@ -55,9 +55,9 @@ export default function InstallPWA() {
   if (!showInstallPrompt) return null;
 
   return (
-    <div className="fixed bottom-20 sm:bottom-6 left-4 right-4 md:left-auto md:right-6 md:max-w-xs rounded-xl border border-border/50 bg-card shadow-xl p-4 z-50 animate-fade-in">
+    <div className="fixed bottom-24 lg:bottom-6 left-4 right-4 md:left-auto md:right-6 md:max-w-xs rounded-2xl border border-border/60 bg-card shadow-elevation-3 p-4 z-50 animate-fade-in-up">
       <div className="flex items-start gap-3">
-        <div className="rounded-lg bg-primary/10 p-2 w-10 h-10 flex items-center justify-center flex-shrink-0">
+        <div className="rounded-xl bg-primary/12 p-2 w-10 h-10 flex items-center justify-center flex-shrink-0">
           <Smartphone className="w-5 h-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
@@ -66,19 +66,10 @@ export default function InstallPWA() {
         </div>
       </div>
       <div className="flex gap-2 mt-3">
-        <Button
-          variant="default"
-          size="sm"
-          onClick={handleInstallClick}
-          className="flex-1"
-        >
+        <Button variant="default" size="sm" onClick={handleInstallClick} className="flex-1">
           Install
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleLater}
-        >
+        <Button variant="ghost" size="sm" onClick={handleLater}>
           Later
         </Button>
       </div>

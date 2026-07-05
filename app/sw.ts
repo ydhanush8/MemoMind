@@ -41,9 +41,7 @@ self.addEventListener('push', (event: PushEvent) => {
       data: { url: data.url ?? '/dashboard' },
     };
 
-    event.waitUntil(
-      self.registration.showNotification(data.title ?? 'MemoMind', options)
-    );
+    event.waitUntil(self.registration.showNotification(data.title ?? 'MemoMind', options));
   } catch {
     // Malformed push payload — ignore
   }
@@ -61,11 +59,12 @@ self.addEventListener('notificationclick', (event: NotificationEvent) => {
       .then((clientList: readonly WindowClient[]) => {
         // If a tab is already on the target URL, focus it without navigating away
         const match = clientList.find(
-          (c: WindowClient) => new URL(c.url).pathname === new URL(targetUrl, self.location.origin).pathname
+          (c: WindowClient) =>
+            new URL(c.url).pathname === new URL(targetUrl, self.location.origin).pathname,
         );
         if (match) return match.focus();
         // No matching tab — open a new window rather than hijacking an existing one
         return self.clients.openWindow(targetUrl);
-      })
+      }),
   );
 });

@@ -1,14 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import {
-  CheckCircle2,
-  AlertCircle,
-  FileText,
-  ArrowRight,
-  BookOpen,
-  Pencil,
-} from 'lucide-react';
+import { CheckCircle2, AlertCircle, FileText, ArrowRight, BookOpen, Pencil } from 'lucide-react';
 import type { AnalysisResponse } from '@/app/lib/types';
 
 interface AnalysisResultProps {
@@ -37,67 +30,67 @@ export default function AnalysisResult({ analysis }: AnalysisResultProps) {
 
   const difficultyColor =
     analysis.difficulty === 'Easy'
-      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+      ? 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400 border-emerald-500/25'
       : analysis.difficulty === 'Hard'
-        ? 'bg-destructive/15 text-red-400 border-destructive/30'
-        : 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+        ? 'bg-destructive/12 text-destructive border-destructive/25'
+        : 'bg-amber-500/12 text-amber-600 dark:text-amber-400 border-amber-500/25';
 
   return (
     <div className="animate-fade-in max-w-3xl mx-auto space-y-4">
-
-      {/* Score + Difficulty row */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="rounded-xl border border-border/50 bg-card p-5">
+        <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-elevation-1">
           <p className="text-xs text-muted-foreground mb-1">Understanding Score</p>
-          <span className="text-3xl font-bold text-primary">{analysis.accuracy_score}%</span>
+          <span className="text-3xl font-extrabold text-primary tabular-nums">
+            {analysis.accuracy_score}%
+          </span>
         </div>
-        <div className="rounded-xl border border-border/50 bg-card p-5">
-          <p className="text-xs text-muted-foreground mb-1">Difficulty</p>
+        <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-elevation-1">
+          <p className="text-xs text-muted-foreground mb-2">Difficulty</p>
           <span
-            className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold border ${difficultyColor}`}
+            className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${difficultyColor}`}
           >
             {analysis.difficulty}
           </span>
         </div>
       </div>
 
-      {/* Cleaned Explanation */}
       {analysis.cleaned_explanation && (
-        <div className="rounded-xl border border-border/50 bg-card p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+        <div className="rounded-2xl border border-border/60 bg-card p-5 shadow-elevation-1">
+          <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
             <Pencil className="w-4 h-4 text-primary" />
             Improved Explanation
           </h3>
-          <p className="text-sm text-foreground leading-relaxed">{analysis.cleaned_explanation}</p>
+          <p className="text-sm text-foreground/90 leading-relaxed">
+            {analysis.cleaned_explanation}
+          </p>
         </div>
       )}
 
-      {/* Key points grid */}
       <div className="grid md:grid-cols-2 gap-4">
-        <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+        <div className="bg-emerald-500/[0.06] border border-emerald-500/20 rounded-2xl p-5">
+          <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
             What You Got Right
           </h3>
-          <ul className="space-y-1.5">
+          <ul className="space-y-2">
             {keyPoints.map((point, i) => (
               <li key={i} className="text-sm text-foreground/80 leading-relaxed flex gap-2">
-                <span className="text-emerald-400 mt-0.5 shrink-0">–</span>
+                <span className="text-emerald-500 mt-0.5 shrink-0">–</span>
                 {point}
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-amber-400" />
+        <div className="bg-amber-500/[0.06] border border-amber-500/20 rounded-2xl p-5">
+          <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-500" />
             Areas to Improve
           </h3>
-          <ul className="space-y-1.5">
+          <ul className="space-y-2">
             {missingPoints.map((point, i) => (
               <li key={i} className="text-sm text-foreground/80 leading-relaxed flex gap-2">
-                <span className="text-amber-400 mt-0.5 shrink-0">–</span>
+                <span className="text-amber-500 mt-0.5 shrink-0">–</span>
                 {point}
               </li>
             ))}
@@ -105,19 +98,17 @@ export default function AnalysisResult({ analysis }: AnalysisResultProps) {
         </div>
       </div>
 
-      {/* Summary */}
-      <div className="bg-card border border-border/50 rounded-xl p-5">
-        <h3 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+      <div className="bg-card border border-border/60 rounded-2xl p-5 shadow-elevation-1">
+        <h3 className="text-sm font-bold text-foreground mb-2 flex items-center gap-2">
           <FileText className="w-4 h-4 text-muted-foreground" />
           Summary
         </h3>
-        <p className="text-sm text-foreground leading-relaxed">{analysis.simple_summary}</p>
+        <p className="text-sm text-foreground/90 leading-relaxed">{analysis.simple_summary}</p>
       </div>
 
-      {/* Next Concepts */}
       {nextConcepts.length > 0 && (
-        <div className="bg-card border border-border/50 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+        <div className="bg-card border border-border/60 rounded-2xl p-5 shadow-elevation-1">
+          <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
             <ArrowRight className="w-4 h-4 text-primary" />
             What to Learn Next
           </h3>
@@ -125,7 +116,7 @@ export default function AnalysisResult({ analysis }: AnalysisResultProps) {
             {nextConcepts.map((concept, i) => (
               <span
                 key={i}
-                className="bg-secondary text-foreground text-xs px-3 py-1.5 rounded-md border border-border font-medium"
+                className="bg-secondary text-foreground text-xs px-3 py-1.5 rounded-full border border-border/60 font-semibold"
               >
                 {concept}
               </span>
@@ -134,28 +125,27 @@ export default function AnalysisResult({ analysis }: AnalysisResultProps) {
         </div>
       )}
 
-      {/* Quiz */}
       {quiz.length > 0 && (
-        <div className="bg-card border border-border/50 rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+        <div className="bg-card border border-border/60 rounded-2xl p-5 shadow-elevation-1">
+          <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
             <BookOpen className="w-4 h-4 text-primary" />
             Quick Quiz
           </h3>
           <div className="space-y-3">
             {quiz.map((item, i) => (
-              <div key={i} className="border border-border/50 rounded-lg overflow-hidden">
-                <div className="bg-secondary/50 p-3">
-                  <p className="text-sm font-medium text-foreground">
+              <div key={i} className="border border-border/60 rounded-xl overflow-hidden">
+                <div className="bg-secondary/60 p-3.5">
+                  <p className="text-sm font-semibold text-foreground">
                     {i + 1}. {item.q}
                   </p>
                 </div>
-                <div className="p-3">
+                <div className="p-3.5">
                   {revealedQuiz.has(i) ? (
-                    <p className="text-sm text-foreground">{item.answer}</p>
+                    <p className="text-sm text-foreground/90">{item.answer}</p>
                   ) : (
                     <button
                       onClick={() => toggleQuiz(i)}
-                      className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                      className="text-xs text-primary hover:text-primary/80 font-semibold transition-colors"
                     >
                       Reveal answer
                     </button>

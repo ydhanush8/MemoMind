@@ -23,7 +23,10 @@ export async function POST(request: NextRequest) {
 
   const { planType } = body;
   if (!planType || !VALID_PLAN_TYPES.includes(planType as PlanType)) {
-    return NextResponse.json({ error: 'Invalid plan type. Must be monthly or yearly.' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Invalid plan type. Must be monthly or yearly.' },
+      { status: 400 },
+    );
   }
 
   const keyId = process.env.RAZORPAY_KEY_ID;
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
     logPayment('subscription.create.blocked_duplicate', { userId, planType });
     return NextResponse.json(
       { error: 'You already have an active premium subscription.', alreadyPremium: true },
-      { status: 409 }
+      { status: 409 },
     );
   }
 
@@ -87,7 +90,7 @@ export async function POST(request: NextRequest) {
           status: 'active',
         },
       },
-      { upsert: true }
+      { upsert: true },
     );
 
     logPayment('subscription.create.success', {

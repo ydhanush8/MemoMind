@@ -131,11 +131,15 @@ export default function NotificationPermission() {
       handleDismiss();
 
       // Welcome notification — fire-and-forget, failure does not affect subscription
-      registration.showNotification('MemoMind Notifications Enabled!', {
-        body: "You'll receive daily practice reminders from now on.",
-        icon: '/icon-192x192.png',
-        badge: '/icon-192x192.png',
-      }).catch(() => {/* silent — subscription already saved */});
+      registration
+        .showNotification('MemoMind Notifications Enabled!', {
+          body: "You'll receive daily practice reminders from now on.",
+          icon: '/icon-192x192.png',
+          badge: '/icon-192x192.png',
+        })
+        .catch(() => {
+          /* silent — subscription already saved */
+        });
     } catch {
       toast.error('Failed to enable notifications. Please try again.');
     } finally {
@@ -146,9 +150,9 @@ export default function NotificationPermission() {
   if (!showPrompt) return null;
 
   return (
-    <div className="fixed bottom-6 left-4 right-4 md:left-auto md:right-6 md:max-w-xs rounded-xl border border-border/50 bg-card shadow-xl p-4 z-50 animate-fade-in">
+    <div className="fixed bottom-24 lg:bottom-6 left-4 right-4 md:left-auto md:right-6 md:max-w-xs rounded-2xl border border-border/60 bg-card shadow-elevation-3 p-4 z-50 animate-fade-in-up">
       <div className="flex items-start gap-3">
-        <div className="rounded-lg bg-primary/10 p-2 w-10 h-10 flex items-center justify-center flex-shrink-0">
+        <div className="rounded-xl bg-primary/12 p-2 w-10 h-10 flex items-center justify-center flex-shrink-0">
           <Bell className="w-5 h-5 text-primary" />
         </div>
         <div className="flex-1 min-w-0">
@@ -168,11 +172,7 @@ export default function NotificationPermission() {
         >
           {isEnabling ? 'Enabling…' : 'Enable'}
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleDismiss}
-        >
+        <Button variant="ghost" size="sm" onClick={handleDismiss}>
           Later
         </Button>
       </div>

@@ -27,7 +27,7 @@ export function useDeleteNote() {
     },
     onSuccess: (noteId) => {
       queryClient.setQueryData<Note[]>(['notes'], (old) =>
-        (old ?? []).filter((n) => n._id !== noteId)
+        (old ?? []).filter((n) => n._id !== noteId),
       );
       queryClient.invalidateQueries({ queryKey: ['practiceStatus'] });
     },
