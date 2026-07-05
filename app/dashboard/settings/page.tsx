@@ -123,38 +123,36 @@ export default function SettingsPage() {
         </SettingsSection>
 
         <SettingsSection icon={Zap} title="Subscription">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <div
                 className={cn(
-                  'rounded-xl p-2.5',
+                  'rounded-xl p-2.5 shrink-0',
                   isPremium ? 'bg-primary/12 text-primary' : 'bg-secondary text-muted-foreground',
                 )}
               >
                 {isPremium ? <Crown className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
               </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">
                   {isPremium ? 'Premium Plan' : 'Free Plan'}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground truncate">
                   {isPremium
                     ? subscription?.currentPeriodEnd
                       ? `Renews ${new Date(subscription.currentPeriodEnd).toLocaleDateString()}`
-                      : 'Active'
+                      : 'Active subscription'
                     : 'Basic note tracking'}
                 </p>
               </div>
             </div>
             {!isPremium ? (
-              <Link href="/pricing">
+              <Link href="/pricing" className="shrink-0">
                 <Button size="sm">Upgrade</Button>
               </Link>
             ) : (
-              <Badge variant="success">
-                {subscription?.currentPeriodEnd
-                  ? `Renews ${new Date(subscription.currentPeriodEnd).toLocaleDateString()}`
-                  : 'Active'}
+              <Badge variant="success" className="shrink-0 whitespace-nowrap">
+                Active
               </Badge>
             )}
           </div>
@@ -209,7 +207,7 @@ export default function SettingsPage() {
 
                   <div className="flex flex-wrap gap-2 pt-1">
                     <Button
-                      variant="default"
+                      variant="outline"
                       size="sm"
                       onClick={handleSave}
                       disabled

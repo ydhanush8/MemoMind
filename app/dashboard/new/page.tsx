@@ -144,24 +144,24 @@ export default function NewNotePage() {
           )}
 
           {isSaved && (
-            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-3.5">
-              <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+            <div className="bg-success/10 border border-success/30 rounded-xl p-3.5">
+              <p className="text-sm font-medium text-success">
                 Note saved — redirecting to dashboard…
               </p>
             </div>
           )}
 
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row gap-4 pt-3">
             <Button
               type="submit"
-              variant="secondary"
+              variant="outline"
               size="lg"
               disabled={isWorking || isSaved}
-              className="flex-1"
+              className="w-full sm:flex-1"
             >
               {isSaved ? (
                 <>
-                  <Check className="w-4 h-4 text-emerald-500" />
+                  <Check className="w-4 h-4 text-success" />
                   Saved
                 </>
               ) : createNote.isPending ? (
@@ -181,10 +181,8 @@ export default function NewNotePage() {
               type="button"
               size="lg"
               onClick={handleAnalyze}
-              disabled={
-                isWorking || isSaved || (isPremium && (!title.trim() || !understanding.trim()))
-              }
-              className="flex-1"
+              disabled={isWorking || isSaved}
+              className="w-full sm:flex-1"
             >
               {analyzeNote.isPending ? (
                 <>
@@ -201,7 +199,7 @@ export default function NewNotePage() {
           </div>
         </form>
 
-        <div className="mt-5 rounded-2xl bg-secondary/60 border border-border/40 p-4 flex items-start gap-3">
+        <div className="mt-8 rounded-2xl bg-secondary/60 border border-border/40 p-4 flex items-start gap-3">
           <Lightbulb className="w-4 h-4 text-primary shrink-0 mt-0.5" />
           <p className="text-xs text-muted-foreground leading-relaxed">
             {isPremium

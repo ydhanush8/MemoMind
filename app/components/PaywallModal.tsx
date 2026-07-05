@@ -59,7 +59,7 @@ export default function PaywallModal({ isOpen, onClose }: PaywallModalProps) {
             <span className="text-sm text-muted-foreground">Yearly</span>
             <div className="flex items-center gap-2">
               <span className="text-sm font-bold text-foreground">₹999/yr</span>
-              <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/12 px-1.5 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold text-success bg-success/12 px-1.5 py-0.5 rounded-full">
                 Save ₹189
               </span>
             </div>

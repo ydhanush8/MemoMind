@@ -45,7 +45,9 @@ export default function Sidebar() {
       <span
         className={cn(
           'ml-auto min-w-5 h-5 px-1.5 rounded-full text-[11px] font-bold flex items-center justify-center',
-          practiceDone ? 'bg-emerald-500 text-white' : 'bg-primary text-primary-foreground',
+          practiceDone
+            ? 'bg-success text-success-foreground'
+            : 'bg-primary text-primary-foreground',
         )}
       >
         {practiceDone ? '✓' : dueCount}
