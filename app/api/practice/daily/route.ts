@@ -30,6 +30,16 @@ export async function GET() {
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
+    // Once today's goal is met, practice is done — keep this in sync with the
+    // `completed` threshold in practice/status so the two endpoints agree.
+    const reviewedToday = await Note.countDocuments({
+      userId,
+      lastReviewedAt: { $gte: today },
+    });
+    if (reviewedToday >= 2) {
+      return NextResponse.json([]);
+    }
+
     const candidates = await Note.find({
       userId,
       $or: [{ lastReviewedAt: { $lt: today } }, { lastReviewedAt: null }],

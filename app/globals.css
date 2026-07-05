@@ -2,67 +2,152 @@
 @tailwind components;
 @tailwind utilities;
 
+/* html.light = light theme, absent = dark (set by the no-flash script in layout).
+   .theme-paper re-scopes the tokens to the warm paper/espresso marketing palette. */
+
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    --background: 220 13% 8%;
+    --foreground: 40 18% 93%;
 
-    --card: 240 6% 6%;
-    --card-foreground: 0 0% 98%;
+    --card: 220 12% 11%;
+    --card-foreground: 40 18% 93%;
 
-    --popover: 240 6% 6%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 220 12% 11%;
+    --popover-foreground: 40 18% 93%;
 
-    --primary: 239 84% 67%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 18 66% 56%;
+    --primary-foreground: 24 40% 10%;
 
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 220 10% 16%;
+    --secondary-foreground: 40 18% 92%;
 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 220 10% 15%;
+    --muted-foreground: 220 8% 62%;
 
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 220 10% 18%;
+    --accent-foreground: 40 18% 93%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 62% 52%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 239 84% 67%;
+    --border: 220 9% 18%;
+    --input: 220 9% 20%;
+    --ring: 18 66% 56%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+
+    --shadow-color: 220 40% 2%;
+    --elevation-1:
+      0 1px 2px hsl(var(--shadow-color) / 0.4), 0 1px 1px hsl(var(--shadow-color) / 0.3);
+    --elevation-2:
+      0 4px 12px -2px hsl(var(--shadow-color) / 0.5), 0 2px 6px -2px hsl(var(--shadow-color) / 0.4);
+    --elevation-3:
+      0 18px 40px -12px hsl(var(--shadow-color) / 0.6),
+      0 8px 20px -8px hsl(var(--shadow-color) / 0.5);
   }
 
   .light {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --background: 40 22% 97%;
+    --foreground: 28 10% 13%;
 
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 28 10% 13%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover-foreground: 28 10% 13%;
 
-    --primary: 239 84% 67%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 16 62% 45%;
+    --primary-foreground: 40 40% 98%;
 
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+    --secondary: 38 22% 94%;
+    --secondary-foreground: 28 10% 22%;
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted: 38 22% 94%;
+    --muted-foreground: 30 7% 44%;
 
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --accent: 38 28% 91%;
+    --accent-foreground: 28 10% 22%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 65% 47%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 36 16% 88%;
+    --input: 36 16% 86%;
+    --ring: 16 62% 45%;
+
+    --shadow-color: 30 20% 40%;
+    --elevation-1:
+      0 1px 2px hsl(var(--shadow-color) / 0.06), 0 1px 1px hsl(var(--shadow-color) / 0.04);
+    --elevation-2:
+      0 6px 16px -4px hsl(var(--shadow-color) / 0.1), 0 2px 6px -2px hsl(var(--shadow-color) / 0.08);
+    --elevation-3:
+      0 20px 44px -14px hsl(var(--shadow-color) / 0.16),
+      0 8px 18px -8px hsl(var(--shadow-color) / 0.1);
+  }
+
+  .theme-paper {
+    --background: 28 15% 8%;
+    --foreground: 38 30% 91%;
+
+    --card: 28 14% 11%;
+    --card-foreground: 38 30% 91%;
+
+    --popover: 28 14% 11%;
+    --popover-foreground: 38 30% 91%;
+
+    --primary: 18 68% 57%;
+    --primary-foreground: 24 40% 9%;
+
+    --secondary: 28 12% 16%;
+    --secondary-foreground: 38 30% 91%;
+
+    --muted: 28 12% 15%;
+    --muted-foreground: 34 12% 63%;
+
+    --accent: 28 12% 18%;
+    --accent-foreground: 38 30% 91%;
+
+    --destructive: 0 62% 52%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 239 84% 67%;
+    --border: 28 12% 20%;
+    --input: 28 12% 22%;
+    --ring: 18 68% 57%;
+
+    --shadow-color: 28 50% 2%;
+  }
+
+  .light .theme-paper {
+    --background: 40 44% 96%;
+    --foreground: 26 16% 15%;
+
+    --card: 42 52% 98%;
+    --card-foreground: 26 16% 15%;
+
+    --popover: 42 52% 98%;
+    --popover-foreground: 26 16% 15%;
+
+    --primary: 15 60% 44%;
+    --primary-foreground: 40 44% 97%;
+
+    --secondary: 38 34% 90%;
+    --secondary-foreground: 26 16% 22%;
+
+    --muted: 38 32% 91%;
+    --muted-foreground: 28 11% 40%;
+
+    --accent: 36 40% 87%;
+    --accent-foreground: 26 16% 22%;
+
+    --destructive: 0 65% 47%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 36 26% 84%;
+    --input: 36 26% 82%;
+    --ring: 15 60% 44%;
+
+    --shadow-color: 28 30% 40%;
   }
 }
 
@@ -70,26 +155,43 @@
   * {
     @apply border-border;
   }
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings:
+      'cv11',
+      'ss01',
+      'calt' 1;
+    text-rendering: optimizeLegibility;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    letter-spacing: -0.02em;
   }
   ::selection {
-    background-color: hsl(var(--primary) / 0.2);
+    background-color: hsl(var(--primary) / 0.18);
+    color: hsl(var(--foreground));
   }
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 10px;
+    height: 10px;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
+    background: hsl(var(--muted-foreground) / 0.25);
     border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.3);
+    background: hsl(var(--muted-foreground) / 0.4);
+    background-clip: content-box;
   }
 }
 
@@ -97,140 +199,246 @@
   .text-balance {
     text-wrap: balance;
   }
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .elevate-1 {
+    box-shadow: var(--elevation-1);
+  }
+  .elevate-2 {
+    box-shadow: var(--elevation-2);
+  }
+  .elevate-3 {
+    box-shadow: var(--elevation-3);
+  }
+
   .glow-primary {
-    box-shadow: 0 0 40px -10px hsl(var(--primary) / 0.4);
+    box-shadow: 0 0 48px -12px hsl(var(--primary) / 0.45);
   }
   .glow-primary-sm {
-    box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.3);
+    box-shadow: 0 0 22px -6px hsl(var(--primary) / 0.35);
   }
+
   .gradient-text {
-    background: linear-gradient(135deg, #818cf8 0%, #a78bfa 50%, #c084fc 100%);
+    background: linear-gradient(
+      120deg,
+      hsl(15 62% 48%) 0%,
+      hsl(24 70% 54%) 45%,
+      hsl(36 68% 55%) 100%
+    );
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  .glass {
-    background: hsl(var(--card) / 0.8);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+  .light .theme-paper .gradient-text,
+  .light .gradient-text {
+    background: linear-gradient(
+      120deg,
+      hsl(14 64% 42%) 0%,
+      hsl(22 68% 46%) 50%,
+      hsl(32 62% 45%) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
+
+  .glass {
+    background: hsl(var(--card) / 0.72);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  }
+
+  .paper-grain::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  }
+
   .animate-fade-in {
-    animation: fade-in 0.3s ease-out both;
+    animation: fade-in 0.4s ease-out both;
   }
   .animate-fade-in-up {
-    animation: fade-in-up 0.4s ease-out both;
+    animation: fade-in-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
   .animate-scale-in {
-    animation: scale-in 0.2s ease-out both;
+    animation: scale-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
   .animate-fadeIn {
-    animation: fade-in 0.3s ease-out both;
+    animation: fade-in 0.4s ease-out both;
   }
-  .animate-aurora-1 { animation: aurora-1 16s ease-in-out infinite; }
-  .animate-aurora-2 { animation: aurora-2 21s ease-in-out infinite; }
-  .animate-aurora-3 { animation: aurora-3 13s ease-in-out infinite; }
+  .animate-aurora-1 {
+    animation: aurora-1 22s ease-in-out infinite;
+  }
+  .animate-aurora-2 {
+    animation: aurora-2 27s ease-in-out infinite;
+  }
+  .animate-aurora-3 {
+    animation: aurora-3 19s ease-in-out infinite;
+  }
 }
 
 @keyframes fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes scale-in {
-  from { opacity: 0; transform: scale(0.95); }
-  to   { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.tw-cursor {
+  animation: tw-blink 1.05s steps(1) infinite;
+}
+@keyframes tw-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
 }
 @keyframes aurora-1 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  33% { transform: translate(70px, -50px) scale(1.1); }
-  66% { transform: translate(-40px, 60px) scale(0.94); }
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(70px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-40px, 60px) scale(0.94);
+  }
 }
 @keyframes aurora-2 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  40% { transform: translate(-80px, 35px) scale(1.07); }
-  75% { transform: translate(45px, -25px) scale(0.97); }
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  40% {
+    transform: translate(-80px, 35px) scale(1.07);
+  }
+  75% {
+    transform: translate(45px, -25px) scale(0.97);
+  }
 }
 @keyframes aurora-3 {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  30% { transform: translate(35px, 70px) scale(1.12); }
-  70% { transform: translate(-55px, -35px) scale(0.91); }
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  30% {
+    transform: translate(35px, 70px) scale(1.12);
+  }
+  70% {
+    transform: translate(-55px, -35px) scale(0.91);
+  }
 }
 
-/* ── Clerk dark-theme overrides ──────────────────────────────────────────── */
-/* Variables alone don't fully theme the UserButton popover — target the     */
-/* generated .cl-* classes directly so action buttons are always readable.   */
-.cl-userButtonPopoverCard {
-  background-color: #111113 !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 20px 60px -10px rgba(0, 0, 0, 0.7) !important;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
-.cl-userButtonPopoverMain {
-  background-color: #111113 !important;
+
+.cl-userButtonPopoverCard,
+.cl-userButtonPopoverMain,
+.cl-userButtonPopoverActions,
+.cl-userButtonPopoverFooter,
+.cl-card {
+  background-color: hsl(220 12% 11%) !important;
 }
-.cl-userButtonPopoverActions {
-  background-color: #111113 !important;
+.cl-userButtonPopoverCard,
+.cl-card {
+  border: 1px solid hsl(220 9% 18%) !important;
+  box-shadow: 0 24px 60px -12px hsl(220 40% 2% / 0.7) !important;
+  border-radius: 0.75rem !important;
 }
 .cl-userButtonPopoverActionButton {
-  color: #e4e4e7 !important;
+  color: hsl(40 18% 90%) !important;
 }
 .cl-userButtonPopoverActionButton:hover {
-  background-color: rgba(255, 255, 255, 0.06) !important;
+  background-color: hsl(220 10% 16%) !important;
 }
 .cl-userButtonPopoverActionButtonText {
-  color: #e4e4e7 !important;
+  color: hsl(40 18% 90%) !important;
 }
 .cl-userButtonPopoverActionButtonIcon {
-  color: #a1a1aa !important;
+  color: hsl(220 8% 62%) !important;
 }
 .cl-userPreviewMainIdentifier {
-  color: #fafafa !important;
+  color: hsl(40 18% 95%) !important;
 }
 .cl-userPreviewSecondaryIdentifier {
-  color: #a1a1aa !important;
+  color: hsl(220 8% 62%) !important;
 }
 .cl-userButtonPopoverFooter {
-  background-color: #111113 !important;
-  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
-}
-/* Sign-in / sign-up card */
-.cl-card {
-  background-color: #111113 !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-top: 1px solid hsl(220 9% 18%) !important;
 }
 .cl-headerTitle {
-  color: #fafafa !important;
+  color: hsl(40 18% 95%) !important;
 }
 .cl-headerSubtitle {
-  color: #a1a1aa !important;
+  color: hsl(220 8% 62%) !important;
 }
 .cl-socialButtonsBlockButton {
-  background-color: #1c1c1f !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: #fafafa !important;
+  background-color: hsl(220 10% 16%) !important;
+  border-color: hsl(220 9% 22%) !important;
+  color: hsl(40 18% 95%) !important;
 }
 .cl-socialButtonsBlockButtonText {
-  color: #fafafa !important;
+  color: hsl(40 18% 95%) !important;
 }
 .cl-formFieldLabel {
-  color: #d4d4d8 !important;
+  color: hsl(40 14% 82%) !important;
 }
 .cl-formFieldInput {
-  background-color: #1c1c1f !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
-  color: #fafafa !important;
+  background-color: hsl(220 10% 16%) !important;
+  border-color: hsl(220 9% 22%) !important;
+  color: hsl(40 18% 95%) !important;
 }
 .cl-dividerLine {
-  background-color: rgba(255, 255, 255, 0.07) !important;
+  background-color: hsl(220 9% 20%) !important;
 }
 .cl-dividerText {
-  color: #71717a !important;
+  color: hsl(220 8% 55%) !important;
 }
 .cl-footerActionLink {
-  color: #818cf8 !important;
+  color: hsl(18 66% 60%) !important;
 }
 .cl-footerActionText {
-  color: #a1a1aa !important;
+  color: hsl(220 8% 62%) !important;
 }

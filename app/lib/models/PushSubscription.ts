@@ -53,7 +53,6 @@ PushSubscriptionSchema.pre('save', function (next) {
 });
 
 const PushSubscription =
-  mongoose.models.PushSubscription ||
-  mongoose.model('PushSubscription', PushSubscriptionSchema);
+  mongoose.models.PushSubscription || mongoose.model('PushSubscription', PushSubscriptionSchema);
 
 export default PushSubscription;

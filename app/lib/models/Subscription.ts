@@ -44,7 +44,7 @@ const subscriptionSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Subscription =

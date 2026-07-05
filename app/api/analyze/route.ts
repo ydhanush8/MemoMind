@@ -21,7 +21,7 @@ async function checkRateLimit(userId: string): Promise<boolean> {
       $inc: { count: 1 },
       $setOnInsert: { expiresAt, userId, action: 'analyze', date: today },
     },
-    { upsert: true, new: true }
+    { upsert: true, new: true },
   );
 
   return usage.count <= DAILY_LIMIT;
@@ -30,7 +30,7 @@ async function checkRateLimit(userId: string): Promise<boolean> {
 async function callOpenRouter(
   apiKey: string,
   prompt: string,
-  attempt: number = 1
+  attempt: number = 1,
 ): Promise<AnalysisResponse> {
   const response = await fetch(OPENROUTER_URL, {
     method: 'POST',
@@ -84,15 +84,21 @@ export async function POST(request: NextRequest) {
   const { title, understanding } = body;
 
   if (!title?.trim() || !understanding?.trim()) {
-    return NextResponse.json({ error: 'Both title and understanding are required' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Both title and understanding are required' },
+      { status: 400 },
+    );
   }
   if (title.length > TITLE_MAX) {
-    return NextResponse.json({ error: `Title must be under ${TITLE_MAX} characters` }, { status: 400 });
+    return NextResponse.json(
+      { error: `Title must be under ${TITLE_MAX} characters` },
+      { status: 400 },
+    );
   }
   if (understanding.length > UNDERSTANDING_MAX) {
     return NextResponse.json(
       { error: `Understanding must be under ${UNDERSTANDING_MAX} characters` },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -107,7 +113,7 @@ export async function POST(request: NextRequest) {
   if (!withinLimit) {
     return NextResponse.json(
       { error: 'Daily limit of 50 analyses reached. Try again tomorrow.' },
-      { status: 429 }
+      { status: 429 },
     );
   }
 

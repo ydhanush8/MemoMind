@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
           expiredEndpoints.push(ps.endpoint as string);
         }
       }
-    })
+    }),
   );
 
   if (expiredEndpoints.length > 0) {

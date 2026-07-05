@@ -11,7 +11,6 @@ const UsageLogSchema = new mongoose.Schema({
 UsageLogSchema.index({ userId: 1, action: 1, date: 1 }, { unique: true });
 UsageLogSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-const UsageLog =
-  mongoose.models.UsageLog || mongoose.model('UsageLog', UsageLogSchema);
+const UsageLog = mongoose.models.UsageLog || mongoose.model('UsageLog', UsageLogSchema);
 
 export default UsageLog;

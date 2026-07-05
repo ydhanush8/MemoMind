@@ -18,11 +18,13 @@ const Progress = React.forwardRef<HTMLDivElement, ProgressProps>(
       {...props}
     >
       <div
-        className="h-full w-full flex-1 bg-primary transition-all duration-300 ease-in-out"
-        style={{ transform: `translateX(-${100 - Math.min(100, Math.max(0, (value / max) * 100))}%)` }}
+        className="h-full w-full flex-1 rounded-full bg-gradient-to-r from-primary to-primary/80 transition-transform duration-500 ease-out"
+        style={{
+          transform: `translateX(-${100 - Math.min(100, Math.max(0, (value / max) * 100))}%)`,
+        }}
       />
     </div>
-  )
+  ),
 );
 Progress.displayName = 'Progress';
 

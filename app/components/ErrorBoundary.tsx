@@ -31,14 +31,14 @@ export default class ErrorBoundary extends React.Component<Props, State> {
       if (this.props.fallback) return this.props.fallback;
 
       return (
-        <div className="bg-red-900/20 border border-red-500/50 rounded-xl p-6 text-center">
-          <p className="text-red-400 font-semibold mb-1">Something went wrong</p>
+        <div className="bg-destructive/10 border border-destructive/30 rounded-2xl p-6 text-center">
+          <p className="text-destructive font-semibold mb-1">Something went wrong</p>
           <p className="text-muted-foreground text-sm">
             {this.state.error?.message ?? 'An unexpected error occurred.'}
           </p>
           <button
             onClick={() => this.setState({ hasError: false })}
-            className="mt-4 text-primary hover:text-primary/80 text-sm"
+            className="mt-4 text-primary hover:text-primary/80 text-sm font-medium"
           >
             Try again
           </button>

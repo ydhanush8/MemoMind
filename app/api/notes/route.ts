@@ -42,12 +42,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Title and understanding are required' }, { status: 400 });
   }
   if (title.length > TITLE_MAX) {
-    return NextResponse.json({ error: `Title must be under ${TITLE_MAX} characters` }, { status: 400 });
+    return NextResponse.json(
+      { error: `Title must be under ${TITLE_MAX} characters` },
+      { status: 400 },
+    );
   }
   if (understanding.length > UNDERSTANDING_MAX) {
     return NextResponse.json(
       { error: `Understanding must be under ${UNDERSTANDING_MAX} characters` },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -60,7 +63,7 @@ export async function POST(request: NextRequest) {
     if (todayCount >= DAILY_NOTE_LIMIT) {
       return NextResponse.json(
         { error: `Daily note limit of ${DAILY_NOTE_LIMIT} reached. Try again tomorrow.` },
-        { status: 429 }
+        { status: 429 },
       );
     }
 

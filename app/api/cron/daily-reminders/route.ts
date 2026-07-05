@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
   // 1. Batch-fetch all active premium user IDs
   const premiumSubs = await Subscription.find(
     { plan: 'premium', status: 'active' },
-    { userId: 1 }
+    { userId: 1 },
   ).lean();
 
   if (premiumSubs.length === 0) {
@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       enabled: true,
       'notificationTypes.dailyReminder': true,
     },
-    { userId: 1, endpoint: 1, subscription: 1 }
+    { userId: 1, endpoint: 1, subscription: 1 },
   ).lean();
 
   // Group subscriptions by userId — one user may have multiple devices
@@ -120,11 +120,11 @@ export async function GET(request: NextRequest) {
                 expiredEndpoints.push(endpoint);
               }
             }
-          })
+          }),
         );
 
         return { userId, status: sent > 0 ? 'sent' : 'failed' };
-      })
+      }),
     );
 
     for (const r of batchResults) {

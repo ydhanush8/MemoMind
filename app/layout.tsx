@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
-import PostHogProvider from './components/PostHogProvider';
 import InstallPWA from './components/InstallPWA';
 import NotificationPermission from './components/NotificationPermission';
 import Providers from './providers';
@@ -9,10 +8,11 @@ import ErrorBoundary from './components/ErrorBoundary';
 import { Toaster } from 'react-hot-toast';
 import './globals.css';
 
-const inter = Inter({
+const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  variable: '--font-inter',
+  variable: '--font-sans',
   display: 'swap',
+  weight: ['400', '500', '600', '700', '800'],
 });
 
 export const metadata: Metadata = {
@@ -21,12 +21,12 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   icons: {
     icon: [
-      { url: '/favicon.ico' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
       { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
       { url: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [{ url: '/apple-touch-icon.png' }],
-    shortcut: '/favicon.ico',
   },
   appleWebApp: {
     capable: true,
@@ -40,7 +40,10 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
-  themeColor: '#09090B',
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#121316' },
+    { media: '(prefers-color-scheme: light)', color: '#F7F5F0' },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -48,39 +51,30 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <ClerkProvider
       appearance={{
         variables: {
-          colorPrimary: '#6366f1',
-          colorBackground: '#111113',
-          colorInputBackground: '#1c1c1f',
-          colorInputText: '#fafafa',
-          colorText: '#fafafa',
-          colorTextSecondary: '#a1a1aa',
-          colorDanger: '#ef4444',
-          colorSuccess: '#22c55e',
-          colorNeutral: '#18181b',
-          borderRadius: '0.5rem',
-          fontFamily: 'Inter, system-ui, sans-serif',
+          colorPrimary: '#cd7a4f',
+          colorBackground: '#191b1e',
+          colorInputBackground: '#23262b',
+          colorInputText: '#f0ece3',
+          colorText: '#f0ece3',
+          colorTextSecondary: '#9aa0a8',
+          colorDanger: '#e05656',
+          colorSuccess: '#3fae74',
+          colorNeutral: '#23262b',
+          borderRadius: '0.75rem',
+          fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
         },
         elements: {
-          // sign-in / sign-up modal
           card: 'shadow-2xl shadow-black/60',
-          socialButtonsBlockButton: 'border-zinc-700 bg-zinc-900 hover:bg-zinc-800 text-zinc-100',
-          formButtonPrimary: 'bg-indigo-500 hover:bg-indigo-600 text-white',
-          footerActionLink: 'text-indigo-400 hover:text-indigo-300',
-          // UserButton popover
-          userButtonPopoverCard: 'border border-zinc-800 shadow-2xl shadow-black/60',
-          userButtonPopoverActionButton: 'hover:bg-zinc-800',
-          userButtonPopoverActionButtonText: 'text-zinc-200',
-          userButtonPopoverActionButtonIcon: 'text-zinc-400',
-          userButtonPopoverFooter: 'border-t border-zinc-800/60',
-          userPreviewMainIdentifier: 'text-zinc-100',
-          userPreviewSecondaryIdentifier: 'text-zinc-400',
+          formButtonPrimary: 'bg-[#cd7a4f] hover:bg-[#c26e42] text-[#1a120c] font-semibold',
+          footerActionLink: 'text-[#d98a5f] hover:text-[#e5a077]',
+          userButtonPopoverCard: 'shadow-2xl shadow-black/60',
         },
       }}
     >
-      <html lang="en" suppressHydrationWarning className={inter.variable}>
+      <html lang="en" suppressHydrationWarning className={jakarta.variable}>
         <head>
-          <link rel="icon" href="/favicon.ico" sizes="any" />
-          <link rel="icon" href="/icon-192x192.png" type="image/png" sizes="192x192" />
+          <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+          <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
           <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
           <link rel="manifest" href="/manifest.json" />
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -93,33 +87,37 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </head>
         <body className="antialiased">
           <Providers>
-            <PostHogProvider>
-              <ErrorBoundary>
-                {children}
-              </ErrorBoundary>
-              <InstallPWA />
-              <NotificationPermission />
-              <Toaster
-                position="top-center"
-                toastOptions={{
-                  duration: 4000,
-                  style: {
-                    background: 'hsl(240, 6%, 6%)',
-                    color: 'hsl(0, 0%, 98%)',
-                    border: '1px solid hsl(240, 3.7%, 15.9%)',
-                    borderRadius: '0.5rem',
-                    fontSize: '0.875rem',
-                    fontFamily: 'var(--font-inter), system-ui, sans-serif',
+            <ErrorBoundary>{children}</ErrorBoundary>
+            <InstallPWA />
+            <NotificationPermission />
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: 'hsl(var(--card))',
+                  color: 'hsl(var(--card-foreground))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: 'var(--radius)',
+                  boxShadow: 'var(--elevation-3)',
+                  fontSize: '0.875rem',
+                  fontFamily: 'var(--font-sans), system-ui, sans-serif',
+                  padding: '10px 14px',
+                },
+                success: {
+                  iconTheme: {
+                    primary: 'hsl(var(--primary))',
+                    secondary: 'hsl(var(--primary-foreground))',
                   },
-                  success: {
-                    iconTheme: { primary: 'hsl(239, 84%, 67%)', secondary: 'hsl(0, 0%, 98%)' },
+                },
+                error: {
+                  iconTheme: {
+                    primary: 'hsl(var(--destructive))',
+                    secondary: 'hsl(var(--destructive-foreground))',
                   },
-                  error: {
-                    iconTheme: { primary: 'hsl(0, 72%, 51%)', secondary: 'hsl(0, 0%, 98%)' },
-                  },
-                }}
-              />
-            </PostHogProvider>
+                },
+              }}
+            />
           </Providers>
         </body>
       </html>
