@@ -108,16 +108,24 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   const { userId } = await auth();
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Optional { endpoint } removes just that one device; absent → remove all devices.
+  let endpoint: string | undefined;
+  try {
+    const body = await request.json();
+    if (typeof body?.endpoint === 'string') endpoint = body.endpoint;
+  } catch {
+    /* no body → remove all */
+  }
+
   try {
     await connectDB();
-    // Remove all devices for this user
-    await PushSubscription.deleteMany({ userId });
+    await PushSubscription.deleteMany(endpoint ? { userId, endpoint } : { userId });
     return NextResponse.json({ success: true, message: 'Subscription removed' });
   } catch (error) {
     console.error('Error deleting subscription:', error);

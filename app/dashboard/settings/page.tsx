@@ -3,14 +3,22 @@
 import React from 'react';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
+import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-hot-toast';
 import { User, Zap, Bell, Info, Crown, Loader2 } from 'lucide-react';
 import { useSubscription } from '@/app/hooks/useSubscription';
 import {
   useNotificationStatus,
   useUpdateNotificationPreferences,
-  useDeleteNotificationSubscription,
 } from '@/app/hooks/useNotifications';
+import {
+  getThisDeviceSubscription,
+  enableThisDevice,
+  disableThisDevice,
+  enableErrorMessage,
+  pushEnvironment,
+  type PushEnv,
+} from '@/app/lib/push';
 import { cn } from '@/app/lib/utils';
 import { Button } from '@/app/components/ui/button';
 import { Badge } from '@/app/components/ui/badge';
@@ -42,12 +50,16 @@ function SettingsSection({
 
 export default function SettingsPage() {
   const { user } = useUser();
+  const queryClient = useQueryClient();
   const { data: subscription, isLoading: subLoading } = useSubscription();
   const { data: notifStatus, isLoading: notifLoading } = useNotificationStatus();
   const updatePrefs = useUpdateNotificationPreferences();
-  const deleteNotifSub = useDeleteNotificationSubscription();
 
   const [preferredTime, setPreferredTime] = React.useState('19:00');
+  // null = still checking this device's push subscription
+  const [deviceEnabled, setDeviceEnabled] = React.useState<boolean | null>(null);
+  const [pushEnv, setPushEnv] = React.useState<PushEnv>('ready');
+  const [busy, setBusy] = React.useState(false);
 
   React.useEffect(() => {
     if (notifStatus?.preferredTime) {
@@ -55,9 +67,35 @@ export default function SettingsPage() {
     }
   }, [notifStatus?.preferredTime]);
 
+  React.useEffect(() => {
+    setPushEnv(pushEnvironment());
+    getThisDeviceSubscription().then((sub) => setDeviceEnabled(!!sub));
+  }, []);
+
   const isPremium = subscription?.isPremium ?? false;
-  const isSubscribed = notifStatus?.subscribed ?? false;
   const isLoading = subLoading || notifLoading;
+
+  const handleEnableDevice = async () => {
+    setBusy(true);
+    const result = await enableThisDevice();
+    if (result.ok) {
+      setDeviceEnabled(true);
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success('Notifications enabled on this device');
+    } else {
+      toast.error(enableErrorMessage(result.reason));
+    }
+    setBusy(false);
+  };
+
+  const handleDisableDevice = async () => {
+    setBusy(true);
+    await disableThisDevice();
+    setDeviceEnabled(false);
+    queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    toast.success('Notifications turned off on this device');
+    setBusy(false);
+  };
 
   const handleSave = async () => {
     try {
@@ -65,15 +103,6 @@ export default function SettingsPage() {
       toast.success('Preferences saved!');
     } catch {
       toast.error('Failed to save preferences');
-    }
-  };
-
-  const handleUnsubscribe = async () => {
-    try {
-      await deleteNotifSub.mutateAsync();
-      toast.success('Notifications disabled');
-    } catch {
-      toast.error('Failed to disable notifications');
     }
   };
 
@@ -172,14 +201,44 @@ export default function SettingsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-foreground">Status</span>
-                <Badge variant={isSubscribed ? 'success' : 'secondary'}>
-                  {isSubscribed ? 'Enabled' : 'Disabled'}
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <span className="text-sm font-medium text-foreground">This device</span>
+                  {deviceEnabled === false && notifStatus?.subscribed && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Notifications are on for another device. Enable here to receive them on this
+                      one too.
+                    </p>
+                  )}
+                </div>
+                <Badge
+                  variant={deviceEnabled ? 'success' : 'secondary'}
+                  className="shrink-0 whitespace-nowrap"
+                >
+                  {deviceEnabled === null ? 'Checking…' : deviceEnabled ? 'Enabled' : 'Not enabled'}
                 </Badge>
               </div>
 
-              {isSubscribed && (
+              {deviceEnabled === false &&
+                (pushEnv === 'ios-needs-install' ? (
+                  <div className="bg-secondary/60 border border-border/40 rounded-2xl p-4 text-sm text-muted-foreground leading-relaxed">
+                    To get notifications on iPhone, add MemoMind to your Home Screen first: tap the{' '}
+                    <span className="font-semibold text-foreground">Share</span> icon →{' '}
+                    <span className="font-semibold text-foreground">Add to Home Screen</span>, then
+                    open MemoMind from there and enable notifications.
+                  </div>
+                ) : pushEnv === 'unsupported' ? (
+                  <div className="bg-secondary/60 border border-border/40 rounded-2xl p-4 text-sm text-muted-foreground leading-relaxed">
+                    This browser doesn&apos;t support push notifications. Try Chrome, Edge, or
+                    install MemoMind to your device.
+                  </div>
+                ) : (
+                  <Button size="sm" onClick={handleEnableDevice} disabled={busy}>
+                    {busy ? 'Enabling…' : 'Enable on this device'}
+                  </Button>
+                ))}
+
+              {deviceEnabled && (
                 <>
                   <Separator />
 
@@ -221,10 +280,10 @@ export default function SettingsPage() {
                     <Button
                       variant="destructive"
                       size="sm"
-                      onClick={handleUnsubscribe}
-                      disabled={deleteNotifSub.isPending}
+                      onClick={handleDisableDevice}
+                      disabled={busy}
                     >
-                      {deleteNotifSub.isPending ? 'Disabling…' : 'Disable'}
+                      {busy ? 'Turning off…' : 'Turn off on this device'}
                     </Button>
                   </div>
                 </>
