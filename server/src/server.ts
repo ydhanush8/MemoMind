@@ -2,7 +2,6 @@ import { createApp } from './app.js';
 import { env } from './config/env.js';
 import { connectDatabase, disconnectDatabase } from './config/database.js';
 import { logger } from './utils/logger.js';
-import { startDailyReminderCron } from './jobs/dailyReminder.job.js';
 
 async function bootstrap(): Promise<void> {
   await connectDatabase();
@@ -11,8 +10,6 @@ async function bootstrap(): Promise<void> {
   const server = app.listen(env.PORT, () => {
     logger.info(`MemoMind server listening on port ${env.PORT} (${env.NODE_ENV})`);
   });
-
-  startDailyReminderCron();
 
   const shutdown = (signal: string): void => {
     logger.info(`${signal} received — shutting down gracefully`);

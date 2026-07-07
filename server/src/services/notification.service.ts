@@ -157,7 +157,7 @@ export async function send(userId: string, input: SendNotificationInput) {
 
 /**
  * Daily reminder batch — same logic as the original Vercel cron endpoint.
- * Called by node-cron and by the protected /api/cron/daily-reminders endpoint.
+ * Called by the protected /api/cron/daily-reminders endpoint (triggered by an external scheduler).
  */
 export async function runDailyReminders() {
   let push: typeof webpush;

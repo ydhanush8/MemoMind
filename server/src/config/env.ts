@@ -31,10 +31,6 @@ const schema = z.object({
   VAPID_EMAIL: z.string().optional(),
 
   CRON_SECRET: z.string().optional(),
-  ENABLE_CRON: z
-    .string()
-    .default('true')
-    .transform((v) => v.toLowerCase() === 'true'),
   LOG_LEVEL: z.string().optional(),
 });
 

@@ -16,7 +16,7 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: 'MemoMind — AI Learning Tracker',
+  title: 'MemoMind - AI Learning Tracker',
   description: 'Never forget what you learn. AI-powered notes with spaced repetition.',
   manifest: '/manifest.json',
   icons: {
