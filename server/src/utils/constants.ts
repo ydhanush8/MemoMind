@@ -14,9 +14,7 @@ export const RAZORPAY_VALID_VERIFY_STATUSES = ['active', 'authenticated', 'creat
 export const RAZORPAY_PAID_STATUSES = ['active', 'authenticated', 'completed'] as const;
 
 export const CRON = {
-  // 03:30 UTC == 09:00 IST — identical to the original vercel.json schedule.
-  DAILY_REMINDER_SCHEDULE: '30 3 * * *',
-  DAILY_REMINDER_TITLE: 'Good morning — time to review',
+  DAILY_REMINDER_TITLE: 'Good morning - time to review',
   DAILY_REMINDER_BODY: 'Kickstart your day with a quick 5-min review.',
   BATCH_SIZE: 50,
 } as const;

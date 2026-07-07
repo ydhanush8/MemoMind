@@ -1,0 +1,18 @@
+name: Daily Reminder
+
+# Triggers the MemoMind daily practice reminder on the Render backend.
+# 03:30 UTC == 09:00 AM IST (same as the original vercel.json schedule).
+on:
+  schedule:
+    - cron: '30 3 * * *'
+  workflow_dispatch: {} # allows a manual run from the Actions tab
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call daily-reminders endpoint
+        run: |
+          curl -fsS -X GET \
+            "https://memomind-zqw3.onrender.com/api/cron/daily-reminders" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

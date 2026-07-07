@@ -5,8 +5,8 @@ import { runDailyReminders } from '../services/notification.service.js';
 
 /**
  * Protected daily-reminder trigger. In production it requires
- * `Authorization: Bearer <CRON_SECRET>` — identical to the Vercel cron route.
- * node-cron also runs the same service function on schedule (see jobs/).
+ * `Authorization: Bearer <CRON_SECRET>`. Called on schedule by an external
+ * cron (GitHub Actions) that hits this endpoint.
  */
 export const dailyReminders = asyncHandler(async (req, res) => {
   if (isProd) {
