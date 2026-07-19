@@ -1,10 +1,11 @@
 name: Daily Reminder
 
 # Triggers the MemoMind daily practice reminder on the Render backend.
-# 03:30 UTC == 09:00 AM IST (same as the original vercel.json schedule).
+# 01:30 UTC = 07:00 IST nominal. GitHub Actions cron runs ~2h late under load,
+# so it lands ~09:00 IST in practice. Adjust if it drifts.
 on:
   schedule:
-    - cron: '30 3 * * *'
+    - cron: '30 1 * * *'
   workflow_dispatch: {} # allows a manual run from the Actions tab
 
 jobs:
