@@ -25,7 +25,7 @@ MemoMind transforms the way you learn by:
 - Organize and review your notes anytime
 - Access from any device
 
-### **AI-Powered Learning** (Premium - ₹99/month or $1.99/month)
+### **AI-Powered Learning** (Premium - ₹99/month)
 - **Instant Feedback** - AI analyzes your understanding and shows gaps
 - **Accuracy Scoring** - See how well you grasp each topic (0-100%)
 - **Personalized Tips** - Get suggestions on what to study next
@@ -81,12 +81,11 @@ Everything in Free, **plus:**
 
 ## Pricing
 
-**India:** ₹99/month or ₹999/year  
-**International:** $1.99/month or $19.99/year
+₹99/month or ₹999/year (INR only)
 
 Cancel anytime. No hidden fees.
 
-[**Start Learning Free →**](https://memomind.vercel.app/welcome)
+[**Start Learning Free →**](https://memomind.vercel.app)
 
 ---
 

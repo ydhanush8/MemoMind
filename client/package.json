@@ -18,22 +18,18 @@
     "clsx": "^2.1.1",
     "framer-motion": "^12.40.0",
     "lucide-react": "^1.17.0",
-    "mongoose": "^8.20.0",
     "next": "15.5.12",
-    "razorpay": "^2.9.6",
     "react": "^18",
     "react-dom": "^18",
     "react-hot-toast": "^2.6.0",
     "serwist": "^9.5.11",
     "tailwind-merge": "^3.6.0",
-    "tailwindcss-animate": "^1.0.7",
-    "web-push": "^3.6.7"
+    "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "@types/web-push": "^3.6.4",
     "eslint": "^8",
     "eslint-config-next": "15.5.12",
     "eslint-config-prettier": "^9.1.0",

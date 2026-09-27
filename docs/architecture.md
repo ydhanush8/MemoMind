@@ -16,7 +16,6 @@ This document is the top-level map. Details live in:
 MemoMind/
 ├── client/                  Next.js 15 app (App Router) — deployed on Vercel
 │   ├── app/                 pages, components, hooks, lib, service worker (sw.ts)
-│   ├── app/api/**           LEGACY Next.js API routes (pre-migration backend, unused)
 │   ├── middleware.ts        Clerk route protection
 │   └── public/              manifest, icons, generated sw.js
 ├── server/                  Express + TypeScript backend — deployed on Render (Docker)
@@ -170,7 +169,7 @@ flowchart TB
     apifetch --> express
 ```
 
-- `middleware.ts` (Clerk) protects every route except `/`, `/pricing`, `/sign-in`, `/sign-up`, `/manifest.json`, and the legacy `/api/webhooks` and `/api/cron` routes.
+- `middleware.ts` (Clerk) protects every route except `/`, `/pricing`, `/sign-in`, `/sign-up`, and `/manifest.json`.
 - `useSubscription` is the single source of `isPremium`. Premium-only queries are gated on it.
 - Styling uses Tailwind plus HSL tokens in `globals.css`. The dark app scope is the default, `.light` switches to light, and `.theme-paper` is the marketing scope. The accent is terracotta. See [client.md](client.md#5-design-system-ink--ivory).
 
@@ -338,6 +337,5 @@ sequenceDiagram
 
 The full list is in [review.md](review.md). The structural items are:
 
-1. **Legacy backend in `client/app/api/**`** is still built and deployed. `apiFetch` silently falls back to it when `NEXT_PUBLIC_API_URL` is unset.
-2. **No Razorpay webhook.** Premium status is refreshed lazily from Razorpay when the stored period ends, so cancellations are only noticed at the next check after the period ends.
-3. **Single-instance assumptions:** the in-memory rate limiter works per instance, and indexes are not auto-built.
+1. **No Razorpay webhook.** Premium status is refreshed lazily from Razorpay when the stored period ends, so cancellations are only noticed at the next check after the period ends.
+2. **Single-instance assumptions:** the in-memory rate limiter works per instance, and indexes are not auto-built.

@@ -19,6 +19,8 @@ export default function NewNotePage() {
   const [title, setTitle] = useState('');
   const [understanding, setUnderstanding] = useState('');
   const [analysis, setAnalysis] = useState<AnalysisResponse | null>(null);
+  // Text the current analysis was made for — lets a retry after a failed save skip the AI call.
+  const [analyzedText, setAnalyzedText] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
 
   const { data: subscription } = useSubscription();
@@ -37,11 +39,11 @@ export default function NewNotePage() {
     }
     if (isSaved) return;
 
+    const input = { title: title.trim(), understanding: understanding.trim() };
+    const analysisMatches = analyzedText === `${input.title}\n${input.understanding}`;
+
     try {
-      await createNote.mutateAsync({
-        title: title.trim(),
-        understanding: understanding.trim(),
-      });
+      await createNote.mutateAsync(analysisMatches && analysis ? { ...input, analysis } : input);
       setIsSaved(true);
       toast.success('Note saved successfully');
       router.push('/dashboard');
@@ -61,18 +63,18 @@ export default function NewNotePage() {
     }
     if (isSaved) return;
 
-    try {
-      const result = await analyzeNote.mutateAsync({
-        title: title.trim(),
-        understanding: understanding.trim(),
-      });
-      setAnalysis(result);
+    const input = { title: title.trim(), understanding: understanding.trim() };
+    const textKey = `${input.title}\n${input.understanding}`;
 
-      await createNote.mutateAsync({
-        title: title.trim(),
-        understanding: understanding.trim(),
-        analysis: result,
-      });
+    try {
+      let result = analysis;
+      if (!result || analyzedText !== textKey) {
+        result = await analyzeNote.mutateAsync(input);
+        setAnalysis(result);
+        setAnalyzedText(textKey);
+      }
+
+      await createNote.mutateAsync({ ...input, analysis: result });
       setIsSaved(true);
       toast.success('Analysis complete! Redirecting…');
 

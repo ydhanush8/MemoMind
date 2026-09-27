@@ -2,174 +2,145 @@
 
 This guide is for developers who want to run MemoMind locally or contribute to the project.
 
+MemoMind is a monorepo with two apps:
+
+- `client/`: the Next.js frontend (this folder). It has no server-side data code of its own.
+- `server/`: the Express backend. It owns MongoDB, OpenRouter, Razorpay, web push and the daily-reminder endpoint.
+
+To run the full app locally, you need both of them running. See [../docs/architecture.md](../docs/architecture.md) for how the pieces fit together.
+
 ---
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js 18+ and pnpm
-- MongoDB Atlas account
+- Node.js 20+
+- pnpm (client) and npm (server)
 - Clerk account
-- OpenRouter API key
-- Razorpay account (for payments)
+- MongoDB Atlas account, OpenRouter API key, Razorpay account: these are all needed by the **server** only
 
-### Installation
+### 1. Clone
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/ydhanush8/MemoMind.git
-   cd MemoMind
-   ```
+```bash
+git clone https://github.com/ydhanush8/MemoMind.git
+cd MemoMind
+```
 
-2. **Install dependencies**
-   ```bash
-   pnpm install
-   ```
+### 2. Start the backend
 
-3. **Set up environment variables**
-   
-   Create a `.env.local` file in the root directory:
-   ```env
-   # Clerk Authentication
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
-   CLERK_SECRET_KEY=sk_test_xxxxx
+```bash
+cd server
+npm install
+cp .env.example .env   # fill in Clerk, MongoDB, OpenRouter, Razorpay, VAPID, CRON_SECRET
+npm run dev            # http://localhost:4000
+```
 
-   # MongoDB
-   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/memomind
+See [../server/README.md](../server/README.md) and [../docs/server.md](../docs/server.md) for every server variable.
 
-   # OpenRouter AI
-   OPENROUTER_API_KEY=sk-or-v1-xxxxx
+### 3. Start the frontend
 
-   # Razorpay (Optional - for premium features)
-   RAZORPAY_KEY_ID=rzp_test_xxxxx
-   RAZORPAY_KEY_SECRET=xxxxx
-   RAZORPAY_PLAN_ID_MONTHLY=plan_xxxxx
-   RAZORPAY_PLAN_ID_YEARLY=plan_xxxxx
-   ```
+```bash
+cd client
+pnpm install
+cp .env.local.example .env.local
+pnpm dev               # http://localhost:3000
+```
 
-4. **Run the development server**
-   ```bash
-   pnpm run dev
-   ```
+`client/.env.local`:
 
-5. **Open your browser**
-   
-   Navigate to [http://localhost:3000](http://localhost:3000)
+```env
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
+CLERK_SECRET_KEY=sk_test_xxxxx
+NEXT_PUBLIC_VAPID_PUBLIC_KEY=xxxxx          # must pair with the server's VAPID_PRIVATE_KEY
+NEXT_PUBLIC_API_URL=http://localhost:4000   # the Express backend
+```
+
+The server's `CORS_ORIGINS` must include `http://localhost:3000`.
 
 ---
 
-## 🔧 Environment Variables
+## 🔧 Frontend environment variables
 
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publishable key | ✅ Yes |
-| `CLERK_SECRET_KEY` | Clerk secret key | ✅ Yes |
-| `MONGODB_URI` | MongoDB connection string | ✅ Yes |
-| `OPENROUTER_API_KEY` | OpenRouter API key for AI features | ✅ Yes |
-| `RAZORPAY_KEY_ID` | Razorpay key ID | ⚠️ Premium only |
-| `RAZORPAY_KEY_SECRET` | Razorpay secret key | ⚠️ Premium only |
-| `RAZORPAY_PLAN_ID_MONTHLY` | Monthly subscription plan ID | ⚠️ Premium only |
-| `RAZORPAY_PLAN_ID_YEARLY` | Yearly subscription plan ID | ⚠️ Premium only |
+| `CLERK_SECRET_KEY` | Clerk secret key (used by `middleware.ts`) | ✅ Yes |
+| `NEXT_PUBLIC_API_URL` | Base URL of the Express backend | ✅ Yes |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | Public VAPID key for push notifications | ⚠️ Push only |
 
-### Getting API Keys
+### Getting keys
 
 #### Clerk (Authentication)
 1. Sign up at [clerk.com](https://clerk.com)
 2. Create a new application
-3. Copy your API keys from the dashboard
+3. Copy the publishable and secret keys. The server uses the same pair.
 
-#### MongoDB Atlas
-1. Sign up at [mongodb.com](https://www.mongodb.com/cloud/atlas)
-2. Create a free cluster
-3. Get your connection string
-4. Replace `<password>` and `<database>` in the URI
+#### VAPID (Push notifications)
+```bash
+cd server && npx web-push generate-vapid-keys
+```
+The public key goes in `client/.env.local` as `NEXT_PUBLIC_VAPID_PUBLIC_KEY`. The private key goes in `server/.env` as `VAPID_PRIVATE_KEY`.
 
-#### OpenRouter (AI)
-1. Sign up at [openrouter.ai](https://openrouter.ai)
-2. Add credits to your account
-3. Generate an API key
-
-#### Razorpay (Payments)
-1. Sign up at [razorpay.com](https://razorpay.com)
-2. Get your test API keys
-3. Create subscription plans for monthly (₹99) and yearly (₹999)
-4. Copy the plan IDs
+#### Server-only keys
+MongoDB Atlas, OpenRouter and Razorpay keys go in `server/.env`, not here. Razorpay needs two subscription plans, monthly (₹99) and yearly (₹999). Pricing is INR only.
 
 ---
 
 ## 📦 Tech Stack
 
-- **Framework:** Next.js 15 (App Router)
-- **Language:** TypeScript
+- **Framework:** Next.js 15 (App Router), React 18, TypeScript
 - **Styling:** Tailwind CSS
 - **Authentication:** Clerk
-- **Database:** MongoDB Atlas with Mongoose
-- **Payments:** Razorpay (INR)
-- **AI:** OpenRouter API (multiple models)
-- **Deployment:** Vercel
+- **Server state:** TanStack Query
+- **PWA / push:** Serwist service worker + Web Push
+- **Payments:** Razorpay Checkout (INR). Order creation and verification happen on the server
+- **Backend:** Express + MongoDB, in `../server`
+- **Deployment:** Vercel (client), Render (server)
 
 ---
 
 ## 📂 Project Structure
 
 ```
-MemoMind/
+client/
 ├── app/
-│   ├── api/              # API routes
-│   │   ├── analyze/      # AI analysis endpoint
-│   │   ├── notes/        # CRUD operations for notes
-│   │   ├── practice/     # Daily practice endpoints
-│   │   └── subscription/ # Payment & subscription management
-│   ├── components/       # Reusable React components
-│   ├── lib/              # Utilities and models
-│   ├── new/              # Create note page
-│   ├── practice/         # Daily practice page
-│   ├── pricing/          # Pricing & payments page
-│   ├── welcome/          # Landing page
-│   └── page.tsx          # Dashboard
-├── middleware.ts         # Clerk authentication middleware
-├── next.config.mjs       # Next.js configuration
-└── tailwind.config.ts    # Tailwind CSS configuration
+│   ├── components/       # UI components (ui/ = primitives)
+│   ├── dashboard/        # notes library, new note, practice, settings
+│   ├── hooks/            # TanStack Query hooks
+│   ├── lib/              # api.ts (fetch wrapper), push.ts, types, utils
+│   ├── pricing/          # pricing & checkout
+│   ├── sign-in/ sign-up/ # Clerk pages
+│   ├── offline/          # offline page
+│   ├── sw.ts             # service worker source
+│   └── page.tsx          # landing page
+├── middleware.ts         # Clerk route protection
+├── next.config.mjs       # Next.js + Serwist config
+└── tailwind.config.ts
 ```
+
+Full per-file reference: [../docs/client.md](../docs/client.md).
 
 ---
 
 ## 🚢 Deployment
 
-### Deploy to Vercel
+### Frontend (Vercel)
+1. Import the GitHub repository in Vercel with `client/` as the root directory.
+2. Add the four frontend variables above, with `NEXT_PUBLIC_API_URL` set to the Render backend URL.
+3. Add the Vercel domain to Clerk's allowed origins and redirect URLs, and to the server's `CORS_ORIGINS`.
 
-1. **Push to GitHub**
-   ```bash
-   git add .
-   git commit -m "Initial commit"
-   git push origin main
-   ```
-
-2. **Deploy to Vercel**
-   - Go to [vercel.com](https://vercel.com)
-   - Import your GitHub repository
-   - Add all environment variables
-   - Deploy!
-
-3. **Update Clerk URLs**
-   - Add your Vercel domain to Clerk's allowed domains
-   - Update redirect URLs in Clerk dashboard
+### Backend (Render)
+See [../server/README.md](../server/README.md). Daily reminders are triggered by GitHub Actions (`.github/workflows/daily-reminder.yml`). The workflow needs a `CRON_SECRET` repo secret with the same value as the one on Render.
 
 ---
 
 ## 🧪 Testing
 
-### Local Testing
 ```bash
-# Run development server
-pnpm run dev
-
-# Build for production
-pnpm run build
-
-# Run production build
-pnpm start
+pnpm dev      # development server (no service worker)
+pnpm build    # production build
+pnpm start    # run the production build (service worker + push work here)
 ```
 
 ### Test Cards (Razorpay)

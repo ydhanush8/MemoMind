@@ -9,7 +9,7 @@ MemoMind/
 ```
 
 ## client/
-The full Next.js application (frontend + its original API routes remain intact).
+The Next.js frontend. All data goes to the Express backend in `server/`.
 ```bash
 cd client
 pnpm install

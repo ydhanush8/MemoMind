@@ -18,7 +18,7 @@ import { Button } from '@/app/components/ui/button';
 
 interface NoteCardProps {
   note: Note;
-  onDelete: (id: string) => void;
+  onDelete: (id: string) => Promise<boolean>;
 }
 
 export default function NoteCard({ note, onDelete }: NoteCardProps) {
@@ -34,10 +34,11 @@ export default function NoteCard({ note, onDelete }: NoteCardProps) {
     });
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     setShowDeleteConfirm(false);
     setIsDeleting(true);
-    onDelete(note._id);
+    // On success the card unmounts; on failure bring it back.
+    if (!(await onDelete(note._id))) setIsDeleting(false);
   };
 
   const truncatedText =

@@ -5,9 +5,9 @@ Reference documentation for the Next.js frontend. Audience: engineers new to the
 > **Status note (backend split).** The backend now runs as a standalone Express app in `../server`.
 > The frontend talks to it through a single fetch wrapper, `app/lib/api.ts` (`apiFetch`), which
 > prefixes `NEXT_PUBLIC_API_URL` and attaches the Clerk session token as a Bearer header.
-> The original Next.js API routes (`client/app/api/**`) and their server-side helpers
-> (`app/lib/mongodb.ts`, `app/lib/models/**`, `app/lib/checkPremium.ts`, `app/lib/paymentLogger.ts`)
-> are still in the tree but are **legacy**. See [Live vs legacy code](#live-vs-legacy-code).
+> The original Next.js API routes (`app/api/**`) and their server-side helpers (Mongoose models,
+> `mongodb.ts`, `checkPremium.ts`, `paymentLogger.ts`) were removed on 2026-09-27. The client
+> has no server-side data code.
 
 ---
 
@@ -29,19 +29,6 @@ Reference documentation for the Next.js frontend. Audience: engineers new to the
 | Font | Plus Jakarta Sans via `next/font/google`, exposed as `--font-sans` |
 
 Almost every page is a Client Component (`'use client'`). There are no Server Components that fetch data; all data flows through TanStack Query hooks in the browser.
-
-### Live vs legacy code
-
-Determined by grepping imports across `client/`:
-
-| File(s) | Status | Evidence |
-| --- | --- | --- |
-| `app/api/**` (12 route files) | **Legacy fallback.** Not called when `NEXT_PUBLIC_API_URL` is set. | Every hook/page uses `apiFetch`, which targets `${NEXT_PUBLIC_API_URL}${path}`. The paths (`/api/notes`, …) are identical to the Express routes in `server/src/routes/*`, so the Next routes are only reached if `NEXT_PUBLIC_API_URL` is unset (then `apiFetch` falls back to same-origin relative URLs). |
-| `app/api/cron/daily-reminders/route.ts` | **Legacy, unscheduled.** | Nothing calls it any more (the Vercel cron was removed). Reminders are triggered by `.github/workflows/daily-reminder.yml`, which calls the Render-hosted Express backend. |
-| `app/lib/mongodb.ts`, `app/lib/models/*`, `app/lib/checkPremium.ts` | **Legacy.** | Imported only by `app/api/**` (and by each other). |
-| `app/lib/paymentLogger.ts` | **Legacy.** | Imported only by `app/api/subscription/{create,verify,restore}`. |
-| `app/lib/push.ts` | **Live.** | Client-side (`'use client'`); used by `NotificationPermission.tsx` and `dashboard/settings/page.tsx`. It calls the backend via `apiFetch`. |
-| `mongoose`, `razorpay`, `web-push` deps | Only needed by legacy code | `web-push` is also used by `scripts/generate-vapid-keys.js`. |
 
 Other dead or unused code found: `components/ui/card.tsx` (no importers), `DialogOverlay`/`DialogPortal` exports, `useDeleteNotificationSubscription` hook, and `PaywallModal` (rendered on `/dashboard` but `showPaywall` is never set to `true`).
 
@@ -175,7 +162,7 @@ Mutations and their cache effects:
 
 ### 4.1 Creating and analysing a note (`/dashboard/new`)
 
-"Save note" only calls `POST /api/notes`. "Analyze with AI" (premium only; free users are routed to `/pricing`) runs analysis first and then saves the note once, with the analysis attached.
+"Save note" calls `POST /api/notes`, attaching the on-screen analysis if the text has not changed since it was made. "Analyze with AI" (premium only; free users are routed to `/pricing`) runs analysis first and then saves the note once, with the analysis attached. If the save fails, a second click reuses the stored analysis instead of calling `/api/analyze` again (each call counts toward the 50/day limit).
 
 ```mermaid
 sequenceDiagram
@@ -190,13 +177,17 @@ sequenceDiagram
     alt not premium
         P->>U: router.push("/pricing")
     else premium
-        P->>H: analyzeNote.mutateAsync({title, understanding})
-        H->>A: POST /api/analyze
-        A->>S: Bearer token + JSON body
-        S-->>A: AnalysisResponse JSON (or 403/429/500 with error)
-        A-->>H: Response
-        H-->>P: AnalysisResponse
-        P->>P: setAnalysis(result), render AnalysisResult
+        alt no analysis yet, or text changed since last analysis
+            P->>H: analyzeNote.mutateAsync({title, understanding})
+            H->>A: POST /api/analyze
+            A->>S: Bearer token + JSON body
+            S-->>A: AnalysisResponse JSON (or 403/429/500 with error)
+            A-->>H: Response
+            H-->>P: AnalysisResponse
+            P->>P: setAnalysis(result), setAnalyzedText, render AnalysisResult
+        else retry after failed save
+            P->>P: reuse stored analysis
+        end
         P->>H: createNote.mutateAsync({title, understanding, analysis})
         H->>A: POST /api/notes
         A->>S: Bearer token + JSON body
@@ -210,7 +201,7 @@ The form enforces `maxLength` 200 (title) and 10,000 (understanding), matching b
 
 ### 4.2 Upgrading via Razorpay checkout (`/pricing`)
 
-The page injects `https://checkout.razorpay.com/v1/checkout.js` on mount. Prices shown in USD are display-only; the Razorpay plans are configured on the backend.
+The page injects `https://checkout.razorpay.com/v1/checkout.js` on mount. Prices are INR only, matching the Razorpay plans configured on the backend.
 
 ```mermaid
 sequenceDiagram
@@ -340,19 +331,9 @@ Frontend variables (`client/.env.local`, see `.env.local.example`):
 | Variable | Required | Used by | Purpose |
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Yes | `ClerkProvider`, middleware | Clerk browser key. `next build` fails during prerender without a real key. |
-| `CLERK_SECRET_KEY` | Yes | `middleware.ts` (and legacy API routes) | Server-side Clerk verification. |
-| `NEXT_PUBLIC_API_URL` | Yes in practice | `app/lib/api.ts` | Base URL of the Express backend, e.g. `http://localhost:4000`. If unset, requests go same-origin to the legacy Next routes. The backend must allow this origin in CORS. |
+| `CLERK_SECRET_KEY` | Yes | `middleware.ts` | Server-side Clerk verification. |
+| `NEXT_PUBLIC_API_URL` | Yes in practice | `app/lib/api.ts` | Base URL of the Express backend, e.g. `http://localhost:4000`. If unset, requests go same-origin and 404. The backend must allow this origin in CORS. |
 | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | For push | `app/lib/push.ts` | Public VAPID key for `pushManager.subscribe`. Must match the backend's private key. |
-
-Variables read only by legacy code (`app/api/**`, `app/lib/mongodb.ts`); not needed for a frontend that uses the Express backend:
-
-| Variable | Read by |
-| --- | --- |
-| `MONGODB_URI` | `lib/mongodb.ts` |
-| `OPENROUTER_API_KEY`, `NEXT_PUBLIC_APP_URL` | `api/analyze` |
-| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_PLAN_ID_MONTHLY`, `RAZORPAY_PLAN_ID_YEARLY` | `api/subscription/*` |
-| `VAPID_PRIVATE_KEY`, `VAPID_EMAIL` | `api/notifications/send`, `api/cron/daily-reminders` |
-| `CRON_SECRET` | `api/cron/daily-reminders` (required in production) |
 
 `SETUP.md` still describes the old single-app env (MongoDB, OpenRouter, Razorpay in the client). Treat `.env.local.example` as the source of truth.
 
@@ -362,7 +343,7 @@ Variables read only by legacy code (`app/api/**`, `app/lib/mongodb.ts`); not nee
 
 ### Root config
 
-- **`package.json`**: package name `memomind`. Scripts: `dev`, `build`, `start`, `lint` (`next lint`), `format` (`prettier --write .`). Runtime deps include `mongoose`, `razorpay`, `web-push`, which only legacy code needs. `sharp` (dev) is for the icon script.
+- **`package.json`**: package name `memomind`. Scripts: `dev`, `build`, `start`, `lint` (`next lint`), `format` (`prettier --write .`). `sharp` (dev) is for the icon script.
 - **`middleware.ts`**: Clerk middleware. Public route list (above); redirects signed-in `/` to `/dashboard`; `auth.protect()` for everything else. Matcher skips `_next` and static assets but always runs for `/api` and `/trpc`. `/offline` is not public.
 - **`next.config.mjs`**: wraps config with `withSerwistInit({ swSrc: 'app/sw.ts', swDest: 'public/sw.js' })`, disabled in the dev server. Sets `eslint.ignoreDuringBuilds: true`, so lint errors do not fail builds.
 - **`tailwind.config.ts`**: token colour mapping, radius, elevation shadows, `8xl` max width, `xs` (480px) breakpoint, animations, `tailwindcss-animate`. `darkMode: ['selector', 'html:not(.light)']` (see section 5). The `accordion-*` keyframes reference Radix variables but nothing uses them.
@@ -378,7 +359,7 @@ Variables read only by legacy code (`app/api/**`, `app/lib/mongodb.ts`); not nee
 ### `scripts/`
 
 - **`generate-icons.mjs`**: rasterises `public/icon.svg` with `sharp` into `icon-192x192.png`, `icon-512x512.png`, `apple-touch-icon.png` (180), `favicon-32x32.png`. Run with `node scripts/generate-icons.mjs` after editing the logo.
-- **`generate-vapid-keys.js`**: prints a new VAPID key pair using `web-push`. Written as ESM (`import`) in a `.js` file while `package.json` has no `"type": "module"`; recent Node versions detect this and run it (with a warning), older ones fail. `npx web-push generate-vapid-keys` does the same job. The printed env names are the old single-app ones: the public key goes in the client as `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, and the private key and email go in `server/.env`.
+- VAPID keys: generate with `cd server && npx web-push generate-vapid-keys`. The public key goes in the client as `NEXT_PUBLIC_VAPID_PUBLIC_KEY`; the private key and email go in `server/.env`.
 
 ### `public/`
 
@@ -393,18 +374,18 @@ Variables read only by legacy code (`app/api/**`, `app/lib/mongodb.ts`); not nee
 - **`globals.css`**: token scopes, base styles (borders, selection, scrollbars), utilities, keyframes, a `prefers-reduced-motion` override, and Clerk `.cl-*` overrides.
 - **`sw.ts`**: Serwist service worker. Precaches `self.__SW_MANIFEST`, `skipWaiting`, `clientsClaim`, navigation preload. Runtime caching puts a `NetworkOnly` rule for any `/api/` path before Serwist's `defaultCache`, so per-user API responses (same-origin or the cross-origin Express API) are never cached; an `activate` handler deletes the `cross-origin` and `apis` caches left by older versions. Adds `push` (shows a notification from JSON `{title, body, icon, badge, url}`, ignoring malformed payloads) and `notificationclick` (focuses a tab already on the target path, otherwise opens a new window). No offline fallback is configured.
 - **`page.tsx`**: marketing landing page (`WelcomePage`), about 800 lines, `.theme-paper`. framer-motion hero with parallax aurora blobs and `Typewriter`, a rotating `FloatingPreview` card of example analyses, steps, features and CTA sections. `SignedIn`/`SignedOut` switch CTAs between Clerk modals and a dashboard link. No data fetching.
-- **`pricing/page.tsx`**: pricing and checkout. INR/USD and monthly/yearly toggles (USD is display only). Loads the Razorpay script; upgrade/verify/restore flow as in 4.2, with manual `sub_...` restore and an error dialog. If already premium it shows a "You're on Pro" screen. Signed-out users get a Clerk `SignInButton` modal.
+- **`pricing/page.tsx`**: pricing and checkout. INR prices with a monthly/yearly toggle. Loads the Razorpay script; upgrade/verify/restore flow as in 4.2, with manual `sub_...` restore and an error dialog. If already premium it shows a "You're on Pro" screen. Signed-out users get a Clerk `SignInButton` modal.
 - **`offline/page.tsx`**: "You're offline" message with a reload button. Protected by middleware and not used as a service-worker fallback.
 - **`sign-in/[[...sign-in]]/page.tsx`**, **`sign-up/[[...sign-up]]/page.tsx`**: Clerk `<SignIn>` / `<SignUp>` in a `.theme-paper` shell with the logo. Optional catch-all segments let Clerk handle sub-steps.
 
 ### `app/dashboard/`
 
 - **`layout.tsx`**: product shell. Renders `Sidebar` and offsets content (`lg:pl-[17rem]`, top/bottom padding for the mobile bars). Pages render content only.
-- **`page.tsx`**: notes library. `useNotes`, `usePracticeStatus`, `useSubscription`, `useDeleteNote`. Premium "N notes ready to review" banner, empty state, grid of `NoteCard`. Renders `PaywallModal`, but nothing opens it.
+- **`page.tsx`**: notes library. `useNotes`, `usePracticeStatus`, `useSubscription`, `useDeleteNote`. Premium "N notes ready to review" banner, empty state, grid of `NoteCard`. If the notes query fails it shows `LoadError` with a Retry button instead of the empty state. `handleDelete` returns `true`/`false` so the card can recover from a failed delete. Renders `PaywallModal`, but nothing opens it.
 - **`loading.tsx`**: skeleton for the notes grid.
-- **`new/page.tsx`**: create-note form with Save and Analyze (flow 4.1). Shows `AnalysisResult` inline after analysis.
+- **`new/page.tsx`**: create-note form with Save and Analyze (flow 4.1). Shows `AnalysisResult` inline after analysis. Remembers which text the analysis was made for (`analyzedText`), so retrying after a failed save does not call the AI again, and "Save note" attaches the on-screen analysis while the text is unchanged.
 - **`new/loading.tsx`**: form skeleton.
-- **`practice/page.tsx`**: daily practice. `usePracticeNotes` gives 2-5 notes; one `PracticeCard` at a time with Previous/Next. Flipping a card calls `useMarkReviewed` once per note (added to a local set before the request; removed again if it fails). The progress bar tracks reviewed count, not card position. Non-premium users are redirected to `/dashboard`; an empty list shows "All caught up".
+- **`practice/page.tsx`**: daily practice. `usePracticeNotes` gives 2-5 notes; one `PracticeCard` at a time with Previous/Next. Flipping a card calls `useMarkReviewed` once per note (added to a local set before the request; removed again if it fails). The progress bar tracks reviewed count, not card position. Non-premium users are redirected to `/dashboard`; an empty list shows "All caught up"; a failed query shows `LoadError` with Retry.
 - **`practice/loading.tsx`**: card skeleton.
 - **`settings/page.tsx`**: account email (Clerk `useUser`), plan status with renew date or Upgrade link, and a premium-only notifications section: this-device status, enable/disable (via `lib/push.ts`), iOS/unsupported guidance, disabled reminder-time input and Save button, and "Test notification" (`POST /api/notifications/send`).
 - **`settings/loading.tsx`**: section skeletons.
@@ -412,7 +393,8 @@ Variables read only by legacy code (`app/api/**`, `app/lib/mongodb.ts`); not nee
 ### `app/components/`
 
 - **`Sidebar.tsx`**: floating left rail on desktop, glass top bar and bottom tab bar on mobile. The Practice item is shown only to premium users, with a due-count or check badge from `usePracticeStatus`. Free users see an "Upgrade to Pro" card/tab. Includes `DynamicUserButton` and `ThemeToggle`.
-- **`NoteCard.tsx`**: card for one note (title, date, "Analyzed" / "N× reviewed" badges, 150-char preview). Opens a detail modal with the full text and `AnalysisResult`; delete goes through a confirm `Dialog`, then fades out and calls `onDelete`.
+- **`NoteCard.tsx`**: card for one note (title, date, "Analyzed" / "N× reviewed" badges, 150-char preview). Opens a detail modal with the full text and `AnalysisResult`; delete goes through a confirm `Dialog`, then fades out and awaits `onDelete` (returns `Promise<boolean>`); on `false` the card becomes visible again.
+- **`LoadError.tsx`**: shared "Couldn't load X" panel with a Retry button (`role="alert"`). Used by the dashboard and practice pages when a query fails, so a backend outage is not mistaken for an empty library.
 - **`AnalysisResult.tsx`**: renders an `AnalysisResponse`: score, difficulty badge, improved explanation, got-right / to-improve lists, summary, next concepts, and a quiz with per-question "Reveal answer". `safeArray` guards against malformed AI output. Used by `NoteCard`, `PracticeCard` and `new/page.tsx`.
 - **`PracticeCard.tsx`**: 3D flip card (front: title; back: understanding + analysis). Calls `onReviewed` the first time it flips to the back, guarded by a ref so React Strict Mode does not double-fire. Resets when `note` changes.
 - **`NotificationPermission.tsx`**: global floating prompt for signed-in premium users whose device has no push subscription. Appears after 5 s. "Later" or a permanent failure hides it for 7 days (`localStorage` key `memoMind_notification_dismissed_until`); `sw-timeout` hides it only for this session.
@@ -445,40 +427,10 @@ Small shadcn-style primitives, all token-based:
 
 ### `app/lib/`
 
-- **`api.ts`** (live): `apiFetch(path, init)`. Adds the base URL and Bearer token; falls back to same-origin when `NEXT_PUBLIC_API_URL` is unset. Every backend call goes through it.
+- **`api.ts`** (live): `apiFetch(path, init)`. Adds the base URL and Bearer token; falls back to same-origin (which 404s) when `NEXT_PUBLIC_API_URL` is unset. Every backend call goes through it.
 - **`push.ts`** (live, client-only): `pushEnvironment()`, `getThisDeviceSubscription()`, `enableThisDevice()` returning `EnableResult`, `disableThisDevice()`, `enableErrorMessage(reason)`. Races `serviceWorker.ready` against a timeout because it never resolves when no SW is registered.
 - **`types.ts`** (live): shared DTOs `Note` (uses `_id: string`), `AnalysisResponse`, `QuizQuestion`, `AnalysisRequest`, `SubscriptionStatus`, `PracticeStatus`, `NotificationStatus`.
 - **`utils.ts`** (live): `cn(...)` = `twMerge(clsx(...))`.
-- **`mongodb.ts`** (legacy): cached Mongoose connection on `global.mongoose`; checks `MONGODB_URI` inside `connectDB()` so builds do not fail at import time.
-- **`checkPremium.ts`** (legacy): `isUserPremium(userId)` returns true when plan is `premium` and status is `active`. Used by legacy analyze/practice routes.
-- **`paymentLogger.ts`** (legacy): `logPayment(event, payload)` writes `[PAYMENT] {json}` to the console with `signature`/`key`/`secret` removed. The `subscription.status.expired` event type is declared but never emitted.
-
-### `app/lib/models/` (legacy)
-
-Mongoose models used only by `app/api/**`. The Express server has its own copies.
-
-- **`Note.ts`**: `userId`, `title`, `understanding`, `analysis` (Mixed), `lastReviewedAt`, `reviewCount`, timestamps. Indexes on `{userId, createdAt}` and `{userId, lastReviewedAt}`.
-- **`Subscription.ts`**: one document per user: `plan` (`free|premium`), `planType`, `status` (`active|cancelled|expired|pending_payment`), Razorpay ids, `pendingPlanType`, period start/end.
-- **`PushSubscription.ts`**: one document per `(userId, endpoint)` (unique index): raw `subscription`, `enabled`, `preferredTime` (default `19:00`), `notificationTypes.{dailyReminder, streakWarning}`.
-- **`UsageLog.ts`**: per-user, per-action, per-day counter for rate limiting; TTL index on `expiresAt`.
-
-### `app/api/` (legacy Next.js route handlers)
-
-Each mirrors an Express route with the same path and response shape. They use cookie-based Clerk `auth()`, so they only work same-origin. They are reached only when `NEXT_PUBLIC_API_URL` is unset, plus the Vercel cron.
-
-- **`analyze/route.ts`**: `POST`. Auth, premium check, 50/day limit via `UsageLog`, calls OpenRouter (model `openai/gpt-oss-120b:free`, JSON mode, retries on 429) and returns `AnalysisResponse`.
-- **`notes/route.ts`**: `GET` lists the user's notes (newest first); `POST` creates one (length limits, 100 notes/day cap).
-- **`notes/[id]/route.ts`**: `GET`, `PUT` (update), `PATCH` (mark reviewed: `lastReviewedAt = now`, `reviewCount += 1`), `DELETE`. Validates the ObjectId.
-- **`practice/daily/route.ts`**: `GET`, premium only. Returns `[]` if 2 or more notes were already reviewed today (UTC); otherwise shuffles up to 10 least-recently-reviewed notes and returns 2-5.
-- **`practice/status/route.ts`**: `GET`, premium only. Returns `{completed (reviewedToday >= 2), reviewedToday, totalNotes, notesNeedingReview}`.
-- **`subscription/status/route.ts`**: `GET`. Creates a free record on first call; returns `{isPremium, plan, status, currentPeriodEnd}`.
-- **`subscription/create/route.ts`**: `POST {planType}`. Returns 409 if already premium; otherwise creates a Razorpay subscription and stores its id and `pendingPlanType`.
-- **`subscription/verify/route.ts`**: `POST`. HMAC signature check, cross-check with the Razorpay API, idempotent upsert to premium. A DB failure returns `recoverable: true`.
-- **`subscription/restore/route.ts`**: `POST {subscriptionId?}`. Finds a paid Razorpay subscription (manual id, then stored id, then notes `userId` match) and activates it.
-- **`notifications/subscribe/route.ts`**: `POST` upserts a device subscription; `GET` returns status/preferences; `PATCH` updates `preferredTime`/`enabled` for all the user's devices; `DELETE` removes one endpoint or all.
-- **`notifications/send/route.ts`**: `POST`. Sends a test push to the caller's own devices (premium only) and removes endpoints that return 404/410.
-- **`cron/daily-reminders/route.ts`**: `GET` (needs `CRON_SECRET` in production). Sends a reminder to premium users who reviewed fewer than 2 notes today, in batches of 50, and removes expired endpoints. No longer scheduled.
-
 ---
 
 ## 8. Build, deploy and local development
@@ -515,5 +467,5 @@ Make sure the backend's CORS configuration allows the frontend origin (`http://l
 ### Deployment
 
 - The frontend deploys to **Vercel** as a standard Next.js app with `client/` as the project root. Set the four frontend variables in Vercel, and add the Vercel domain to Clerk's allowed origins and redirect URLs.
-- Daily reminders are sent by the **Express backend on Render**, triggered by `.github/workflows/daily-reminder.yml` (`30 1 * * *` UTC, with a Bearer `CRON_SECRET`). There is no Vercel cron. Consider eventually removing `app/api/**`, `app/lib/models/**`, `app/lib/mongodb.ts`, `app/lib/checkPremium.ts`, `app/lib/paymentLogger.ts`, and the `mongoose`/`razorpay` deps once the Express backend is confirmed as the only backend.
+- Daily reminders are sent by the **Express backend on Render**, triggered by `.github/workflows/daily-reminder.yml` (`30 1 * * *` UTC, with a Bearer `CRON_SECRET`). There is no Vercel cron.
 - The generated `public/sw.js` and `workbox-*.js` are gitignored and produced on every build.

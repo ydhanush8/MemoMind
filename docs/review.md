@@ -7,7 +7,7 @@ Severity: **Critical** = exploitable / data leak / revenue loss · **High** = wr
 
 ## Summary
 
-**Fixed since review:** #1, #2, #3, #4, #5, #6, #8 (and the `/api/notifications/send` status check). #4 is handled by lazily re-checking Razorpay when the period ends; a webhook is still the long-term fix.
+**Fixed since review:** #1–#8, #10–#13 (USD toggle removed; legacy backend and the VAPID script deleted from `client/`; and the `/api/notifications/send` status check). #4 is handled by lazily re-checking Razorpay when the period ends; a webhook is still the long-term fix.
 
 | # | Severity | Area | Problem |
 |---|----------|------|---------|
@@ -17,13 +17,13 @@ Severity: **Critical** = exploitable / data leak / revenue loss · **High** = wr
 | 4 | High (fixed) | Payments | Premium never expires — `currentPeriodEnd` ignored, no webhook |
 | 5 | High (fixed) | Security | Cron endpoint unauthenticated unless `NODE_ENV=production` |
 | 6 | High (fixed) | Privacy | React Query cache not cleared on sign-out; keys lack `userId` |
-| 7 | High | Payments / UX | USD price toggle is display-only; user is charged the INR plan |
+| 7 | High (fixed) | Payments / UX | USD price toggle is display-only; user is charged the INR plan |
 | 8 | Medium (fixed) | Ops | Two schedulers (Vercel cron + GitHub Actions) — duplicate reminders |
 | 9 | Medium | Data | `autoIndex: false` — schema indexes (unique, TTL) never created by server |
-| 10 | Medium | Architecture | Dead backend still deployed inside `client/`; silent same-origin fallback |
-| 11 | Medium | UX | Query errors render as "library empty" / "all caught up" |
-| 12 | Medium | UX | Failed delete leaves NoteCard invisible |
-| 13 | Medium | UX / quota | Analyze-then-save chain re-runs AI on save failure |
+| 10 | Medium (fixed) | Architecture | Dead backend still deployed inside `client/`; silent same-origin fallback |
+| 11 | Medium (fixed) | UX | Query errors render as "library empty" / "all caught up" |
+| 12 | Medium (fixed) | UX | Failed delete leaves NoteCard invisible |
+| 13 | Medium (fixed) | UX / quota | Analyze-then-save chain re-runs AI on save failure |
 | 14 | Low | Various | Races, validation gaps, stale caches, a11y, stale docs (see below) |
 
 ---

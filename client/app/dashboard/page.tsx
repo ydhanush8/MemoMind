@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import type { Note } from '@/app/lib/types';
 import NoteCard from '@/app/components/NoteCard';
+import LoadError from '@/app/components/LoadError';
 import PaywallModal from '@/app/components/PaywallModal';
 import { toast } from 'react-hot-toast';
 import { Plus, FileText, Sparkles } from 'lucide-react';
@@ -15,7 +16,7 @@ import { Button } from '@/app/components/ui/button';
 export default function DashboardPage() {
   const [showPaywall, setShowPaywall] = useState(false);
 
-  const { data: notes = [], isLoading: notesLoading } = useNotes();
+  const { data: notes = [], isLoading: notesLoading, isError, refetch } = useNotes();
   const { data: practiceStatus } = usePracticeStatus();
   const { data: subscription } = useSubscription();
   const deleteNote = useDeleteNote();
@@ -23,12 +24,14 @@ export default function DashboardPage() {
   const isPremium = subscription?.isPremium ?? false;
   const isLoading = notesLoading;
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string): Promise<boolean> => {
     try {
       await deleteNote.mutateAsync(id);
       toast.success('Note deleted successfully');
+      return true;
     } catch {
       toast.error('Failed to delete note');
+      return false;
     }
   };
 
@@ -43,7 +46,9 @@ export default function DashboardPage() {
           <p className="mt-1.5 text-sm text-muted-foreground">
             {isLoading
               ? 'Loading your library…'
-              : `${notes.length} ${notes.length === 1 ? 'note' : 'notes'} in your library`}
+              : isError
+                ? 'Library unavailable'
+                : `${notes.length} ${notes.length === 1 ? 'note' : 'notes'} in your library`}
           </p>
         </div>
 
@@ -88,7 +93,9 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {!isLoading && notes.length === 0 && (
+      {!isLoading && isError && <LoadError what="your notes" onRetry={() => refetch()} />}
+
+      {!isLoading && !isError && notes.length === 0 && (
         <div className="mt-10 flex flex-col items-center justify-center rounded-3xl border border-dashed border-border bg-card/40 py-24 text-center px-6">
           <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary">
             <FileText className="h-7 w-7 text-muted-foreground" />
@@ -107,7 +114,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {!isLoading && notes.length > 0 && (
+      {!isLoading && !isError && notes.length > 0 && (
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
           {(notes as Note[]).map((note) => (
             <NoteCard key={note._id} note={note} onDelete={handleDelete} />

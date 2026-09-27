@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, Loader2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import PracticeCard from '@/app/components/PracticeCard';
+import LoadError from '@/app/components/LoadError';
 import { usePracticeNotes } from '@/app/hooks/usePractice';
 import { useMarkReviewed } from '@/app/hooks/useNotes';
 import { useSubscription } from '@/app/hooks/useSubscription';
@@ -18,7 +19,7 @@ export default function PracticePage() {
   const [reviewedNoteIds, setReviewedNoteIds] = useState<Set<string>>(new Set());
 
   const { data: subscription, isLoading: subLoading } = useSubscription();
-  const { data: notes = [], isLoading: notesLoading } = usePracticeNotes();
+  const { data: notes = [], isLoading: notesLoading, isError, refetch } = usePracticeNotes();
   const markReviewed = useMarkReviewed();
 
   const isLoading = subLoading || notesLoading;
@@ -79,7 +80,9 @@ export default function PracticePage() {
         </div>
       )}
 
-      {!isLoading && notes.length === 0 && (
+      {!isLoading && isError && <LoadError what="today's practice" onRetry={() => refetch()} />}
+
+      {!isLoading && !isError && notes.length === 0 && (
         <div className="flex items-center justify-center py-16">
           <div className="bg-card border border-border/60 rounded-3xl p-12 max-w-sm w-full text-center shadow-elevation-1">
             <div className="inline-flex items-center justify-center rounded-2xl bg-success/12 p-4 text-success mb-5 mx-auto">
@@ -98,7 +101,7 @@ export default function PracticePage() {
         </div>
       )}
 
-      {!isLoading && notes.length > 0 && (
+      {!isLoading && !isError && notes.length > 0 && (
         <div className="mt-8 space-y-6">
           <div>
             <div className="flex items-center justify-between mb-2.5">

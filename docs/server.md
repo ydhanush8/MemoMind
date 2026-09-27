@@ -2,7 +2,7 @@
 
 This document describes the standalone Express backend in `server/`. It is aimed at engineers who are new to the codebase and need to understand how a request travels through the system, which external services are involved, and where to make changes.
 
-The backend was migrated 1:1 from the original Next.js API routes (which still exist under `client/app/api/*` as a fallback). It uses the same MongoDB collections, the same Clerk authentication, and preserves the original response bodies and status codes, so the frontend only needs a different base URL and an `Authorization: Bearer <token>` header.
+The backend was migrated 1:1 from the original Next.js API routes (since removed from `client/`). It uses the same MongoDB collections, the same Clerk authentication, and preserves the original response bodies and status codes, so the frontend only needs a different base URL and an `Authorization: Bearer <token>` header.
 
 ---
 

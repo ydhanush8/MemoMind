@@ -27,7 +27,6 @@ export default function PricingPage() {
   const queryClient = useQueryClient();
   const { isSignedIn } = useAuth();
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
-  const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { data: subscriptionStatus, refetch: refetchSubscription } = useSubscription();
@@ -35,19 +34,12 @@ export default function PricingPage() {
   const [showManualRestore, setShowManualRestore] = useState(false);
   const [manualSubId, setManualSubId] = useState('');
 
+  // Razorpay plans are INR-only.
   const pricing = {
-    INR: {
-      monthly: 99,
-      yearly: 999,
-      symbol: '₹',
-      yearlyDiscount: 189,
-    },
-    USD: {
-      monthly: 1.99,
-      yearly: 19.99,
-      symbol: '$',
-      yearlyDiscount: 3.89,
-    },
+    monthly: 99,
+    yearly: 999,
+    symbol: '₹',
+    yearlyDiscount: 189,
   };
 
   useEffect(() => {
@@ -273,31 +265,6 @@ export default function PricingPage() {
           </p>
         </div>
 
-        <div className="flex gap-1 justify-center mb-6 bg-secondary rounded-full p-1 w-fit mx-auto">
-          <button
-            onClick={() => setCurrency('INR')}
-            className={cn(
-              'px-5 py-2 text-sm font-semibold rounded-full transition-all',
-              currency === 'INR'
-                ? 'bg-card shadow-elevation-1 text-foreground'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            INR (₹)
-          </button>
-          <button
-            onClick={() => setCurrency('USD')}
-            className={cn(
-              'px-5 py-2 text-sm font-semibold rounded-full transition-all',
-              currency === 'USD'
-                ? 'bg-card shadow-elevation-1 text-foreground'
-                : 'text-muted-foreground hover:text-foreground',
-            )}
-          >
-            USD ($)
-          </button>
-        </div>
-
         <div className="flex gap-1 justify-center mb-12 bg-secondary rounded-full p-1 w-fit mx-auto">
           <button
             onClick={() => setSelectedPlan('monthly')}
@@ -321,8 +288,8 @@ export default function PricingPage() {
           >
             Yearly
             <span className="absolute -top-2.5 -right-2 bg-success text-success-foreground text-[10px] px-1.5 py-0.5 rounded-full font-bold leading-none whitespace-nowrap">
-              Save {pricing[currency].symbol}
-              {pricing[currency].yearlyDiscount}
+              Save {pricing.symbol}
+              {pricing.yearlyDiscount}
             </span>
           </button>
         </div>
@@ -331,9 +298,7 @@ export default function PricingPage() {
           <div className="rounded-3xl border border-border/60 bg-card p-8 flex flex-col shadow-elevation-1">
             <div>
               <p className="text-lg font-bold text-foreground">Free</p>
-              <p className="text-4xl font-extrabold text-foreground mt-3">
-                {pricing[currency].symbol}0
-              </p>
+              <p className="text-4xl font-extrabold text-foreground mt-3">{pricing.symbol}0</p>
               <p className="text-sm text-muted-foreground mt-1">Free forever</p>
             </div>
 
@@ -383,10 +348,8 @@ export default function PricingPage() {
                   <Sparkles className="w-4 h-4 text-primary" />
                 </div>
                 <p className="text-4xl font-extrabold text-foreground mt-3">
-                  {pricing[currency].symbol}
-                  {selectedPlan === 'monthly'
-                    ? pricing[currency].monthly
-                    : pricing[currency].yearly}
+                  {pricing.symbol}
+                  {selectedPlan === 'monthly' ? pricing.monthly : pricing.yearly}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {selectedPlan === 'monthly' ? 'per month' : 'per year'}
