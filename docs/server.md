@@ -74,7 +74,7 @@ flowchart TD
     Router --> ObjId["validateObjectId - only /api/notes/:id"]
     ObjId --> Auth["requireAuth - 401 if no Clerk userId"]
     Router --> Auth
-    Router --> CronCtrl["cron controller - checks CRON_SECRET in production"]
+    Router --> CronCtrl["cron controller - always checks CRON_SECRET"]
     Auth --> Validate["validate - validator function, 400 on error"]
     Auth --> Ctrl["Controller wrapped in asyncHandler"]
     Validate --> Ctrl
@@ -121,13 +121,13 @@ All `/api/*` routes pass through the rate limiter. "Clerk" means `requireAuth` (
 | POST | `/api/notifications/subscribe` | Clerk | `validatePushSubscription` | `notification.controller.subscribe` | `notification.service.subscribe` | Upserts a push subscription for (user, endpoint) and re-enables it. | Browser `PushSubscription` JSON: `{ endpoint, keys: { p256dh, auth } }` | `200 { success: true, message, subscriptionId }` |
 | PATCH | `/api/notifications/subscribe` | Clerk | none (inline checks) | `notification.controller.updatePreferences` | `notification.service.updatePreferences` | Updates `preferredTime` (only if `HH:MM`) and/or `enabled` on **all** of the user's devices. 404 if none. | `{ preferredTime?, enabled? }` | `200 { success: true }` |
 | DELETE | `/api/notifications/subscribe` | Clerk | none | `notification.controller.remove` | `notification.service.remove` | Deletes one device (if `endpoint` given) or all of the user's push subscriptions. | `{ endpoint? }` | `200 { success: true, message }` |
-| POST | `/api/notifications/send` | Clerk + Premium (plan only, see note) | none | `notification.controller.send` | `notification.service.send` | Sends a test/manual push to the caller's own devices; removes expired endpoints. 503 if VAPID not configured, 403 if `targetUserId` is someone else. | `{ targetUserId?, title?, body?, url? }` | `200 { success: true, message: "Notification sent to N device(s)" }` |
-| GET | `/api/cron/daily-reminders` | `Authorization: Bearer <CRON_SECRET>` in production only | none | `cron.controller.dailyReminders` | `notification.service.runDailyReminders` | Sends the daily reminder push to active premium users who have not met today's practice goal. | none | `200 { success, processed, sent, skipped, expired, failed }` or `200 { message, processed: 0 }` |
+| POST | `/api/notifications/send` | Clerk + Premium | none | `notification.controller.send` | `notification.service.send` | Sends a test/manual push to the caller's own devices; removes expired endpoints. 503 if VAPID not configured, 403 if `targetUserId` is someone else. | `{ targetUserId?, title?, body?, url? }` | `200 { success: true, message: "Notification sent to N device(s)" }` |
+| GET | `/api/cron/daily-reminders` | `Authorization: Bearer <CRON_SECRET>` (always) | none | `cron.controller.dailyReminders` | `notification.service.runDailyReminders` | Sends the daily reminder push to active premium users who have not met today's practice goal. | none | `200 { success, processed, sent, skipped, expired, failed }` or `200 { message, processed: 0 }` |
 
 Notes:
 
-- `/api/notifications/send` checks only `plan === 'premium'`, not `status`. This inconsistency is intentional (preserved from the original route, per a code comment).
-- Outside production (`NODE_ENV !== 'production'`), the cron endpoint is **unauthenticated**.
+- Premium checks (`isUserPremium`, `getStatus`) require `status === 'active'` and a future `currentPeriodEnd`. When the stored period has passed, the service re-fetches the subscription from Razorpay: a paid status extends the period, anything else marks it `expired`.
+- The cron endpoint always requires `CRON_SECRET` (timing-safe compare) and returns 401 when it is unset.
 - In `/api/analyze`, the daily usage counter is incremented before the AI call, so failed AI calls still count toward the 50/day limit.
 
 ---
@@ -250,7 +250,7 @@ sequenceDiagram
     SS->>PS: fetchRazorpaySubscription
     PS->>RZ: subscriptions.fetch id
     alt Razorpay API fails
-        SS->>SS: assume status active and continue
+        SS-->>FE: 502 recoverable true, use Restore Subscription
     end
     alt status not active, authenticated or created
         SS-->>FE: 400 Subscription is not active on Razorpay
@@ -259,7 +259,9 @@ sequenceDiagram
     alt already premium with same subscription id and future period end
         SS-->>FE: 200 Subscription already active
     end
-    SS->>SS: period from Razorpay current_start and current_end, else now plus 1 month or 1 year
+    SS->>SS: activateSubscription checks notes.userId matches caller, else 403
+    SS->>DB: subscription id linked to another premium user? then 409
+    SS->>SS: planType from Razorpay plan_id, period from current_start and current_end
     SS->>DB: upsert plan premium, status active, planType, period dates
     alt DB write fails
         SS-->>FE: 500 recoverable true, use Restore Subscription
@@ -394,7 +396,7 @@ Defined and validated in `src/config/env.ts`. Only the database and Clerk keys a
 | Name | Required | Default | Purpose |
 | --- | --- | --- | --- |
 | `PORT` | no | `4000` | HTTP port (coerced to a number). |
-| `NODE_ENV` | no | `development` | `development`, `production` or `test`. `production` enables the `CRON_SECRET` check and disables `pino-pretty`. |
+| `NODE_ENV` | no | `development` | `development`, `production` or `test`. `production` disables `pino-pretty`. |
 | `CORS_ORIGINS` | no | `http://localhost:3000` | Comma-separated allowed frontend origins. If it parses to an empty list, CORS reflects any origin. |
 | `CLERK_PUBLISHABLE_KEY` | **yes** | none | Clerk publishable key for `clerkMiddleware`. |
 | `CLERK_SECRET_KEY` | **yes** | none | Clerk secret key used to verify session tokens. |
@@ -408,7 +410,7 @@ Defined and validated in `src/config/env.ts`. Only the database and Clerk keys a
 | `VAPID_PUBLIC_KEY` | no | none | Web Push VAPID public key. |
 | `VAPID_PRIVATE_KEY` | no | none | Web Push VAPID private key. |
 | `VAPID_EMAIL` | no | none | Contact email; prefixed with `mailto:` for VAPID. All three VAPID values are needed or push endpoints fail (503 for send, 500 for cron). |
-| `CRON_SECRET` | no (but effectively required in production for the cron to work) | none | Bearer token required by `/api/cron/daily-reminders` in production. Must match the `CRON_SECRET` GitHub Actions secret. |
+| `CRON_SECRET` | no (but required for the cron endpoint to work) | none | Bearer token required by `/api/cron/daily-reminders`. Must match the `CRON_SECRET` GitHub Actions secret. |
 | `LOG_LEVEL` | no | `debug` in dev, `info` in prod | Pino log level. Not listed in `.env.example`. |
 
 The README also mentions `ENABLE_CRON`; that variable is **not** read anywhere in the current code (the in-process `node-cron` job was removed).
@@ -479,7 +481,7 @@ All controllers except `health` are wrapped in `asyncHandler` and respond via `s
 - **`practice.controller.ts`** - `daily` and `status`, delegating to `practice.service`.
 - **`subscription.controller.ts`** - `create`, `verify`, `restore` (trims an optional `subscriptionId` from the body) and `status`. `create` casts `req.body.planType` after the route validator has checked it.
 - **`notification.controller.ts`** - `subscribe`, `getStatus`, `updatePreferences`, `remove` (passes `endpoint` only if it is a string) and `send`.
-- **`cron.controller.ts`** - `dailyReminders` enforces `Authorization: Bearer <CRON_SECRET>` when `isProd` (401 otherwise, including when the secret is unset) and returns the result of `runDailyReminders()`. In non-production environments it is open.
+- **`cron.controller.ts`** - `dailyReminders` always enforces `Authorization: Bearer <CRON_SECRET>` with a timing-safe compare (401 otherwise, including when the secret is unset) and returns the result of `runDailyReminders()`.
 
 ### `src/services/`
 
@@ -487,7 +489,7 @@ All controllers except `health` are wrapped in `asyncHandler` and respond via `s
 - **`analysis.service.ts`** - `analyze` checks premium (403), atomically upserts and increments a `UsageLog` row for `(userId, "analyze", YYYY-MM-DD)` with a 48-hour TTL, rejects when the count exceeds 50 (429), then calls `ai.service.generateAnalysis`. The counter increments before the AI call, so failures and rejected attempts also count.
 - **`ai.service.ts`** - `generateAnalysis` builds a fixed JSON-schema prompt and POSTs it to OpenRouter with `response_format: json_object` and `max_tokens: 2000`. On HTTP 429 it retries up to 3 total attempts with 1s/2s backoff. Any error (non-OK status, empty content, invalid JSON) is logged and rethrown as `AppError(500, 'AI analysis failed. Please try again.')`. The parsed JSON is not schema-validated.
 - **`practice.service.ts`** - `getDailyPractice` returns `[]` once `PRACTICE_DAILY_GOAL` (2) notes were reviewed today; otherwise it takes the 10 least recently reviewed notes not reviewed today, shuffles them (Fisher-Yates), and returns 2 to 5 of them. `getPracticeStatus` returns counters. Both require premium (403).
-- **`subscription.service.ts`** - `isUserPremium` (used by analysis and practice), `getStatus` (creates a free record if missing), `createSubscription`, `verifyPayment` and `restoreSubscription` (see section 4.3). Notable behaviour: if the Razorpay fetch fails during verify, the service assumes `active` and activates on the strength of the HMAC signature alone; `verifyPayment` does not clear `pendingPlanType` but the restore path does. There is no webhook handling, so cancellations or expiries are never written back automatically (the `subscription.status.expired` log event is declared but unused).
+- **`subscription.service.ts`** - `isUserPremium` (used by analysis and practice), `getStatus` (creates a free record if missing), `createSubscription`, `verifyPayment` and `restoreSubscription` (see section 4.3). Notable behaviour: verify and every restore strategy go through `activateSubscription`, which requires the Razorpay subscription's `notes.userId` to match the caller and rejects IDs already linked to another premium user. The plan type comes from Razorpay's `plan_id`, not the client. If the Razorpay fetch fails during verify, it returns 502 and never activates on the signature alone. There is no webhook: `checkPremium` lazily re-fetches from Razorpay once `currentPeriodEnd` has passed and either extends the period or sets `status: 'expired'`.
 - **`payment.service.ts`** - Thin Razorpay wrapper: `logPayment` (structured `[PAYMENT]` logs with `signature`/`key`/`secret` stripped), `hasRazorpayCredentials`, `verifyPaymentSignature`, `createRazorpaySubscription` (`total_count` 12 for monthly, 1 for yearly, `notes: { userId, planType }`), `fetchRazorpaySubscription`, `listRazorpaySubscriptions`. Re-exports `getRazorpayCredentials` and `getPlanId`. Throws 500 if the client cannot be created.
 - **`notification.service.ts`** - Push subscription CRUD (`subscribe`, `getStatus`, `updatePreferences`, `remove`), a manual `send`, and the batch job `runDailyReminders` (see section 4.4). Both senders delete endpoints that return 404/410. `getWebPush()` sets VAPID details on the global `web-push` module on each call. `preferredTime` and `streakWarning` are stored but not used by any sending logic.
 
@@ -545,7 +547,7 @@ npm start                   # node dist/server.js
 
 Tips:
 
-- With `NODE_ENV=development` the cron endpoint is open, so you can trigger reminders locally with `curl http://localhost:4000/api/cron/daily-reminders` (this sends real pushes if VAPID keys and subscriptions exist).
+- To trigger reminders locally, set `CRON_SECRET` in `.env` and run `curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:4000/api/cron/daily-reminders` (this sends real pushes if VAPID keys and subscriptions exist).
 - Authenticated endpoints need a Clerk session token in `Authorization: Bearer <token>`. In the browser, obtain it with Clerk's `getToken()`.
 - Set `CORS_ORIGINS` to include your frontend origin (default `http://localhost:3000`).
 

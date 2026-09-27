@@ -7,6 +7,7 @@ import { AppError } from '../utils/appError.js';
 import { CRON, LIMITS } from '../utils/constants.js';
 import { utcMidnight } from '../utils/date.js';
 import { logger } from '../utils/logger.js';
+import { isUserPremium } from './subscription.service.js';
 import type {
   WebPushSubscription,
   SendNotificationInput,
@@ -110,9 +111,7 @@ export async function send(userId: string, input: SendNotificationInput) {
     throw new AppError(403, 'Forbidden');
   }
 
-  // NOTE: send checks plan only (not status) — preserved from the original route.
-  const userSubscription = await Subscription.findOne({ userId });
-  if (!userSubscription || userSubscription.plan !== 'premium') {
+  if (!(await isUserPremium(userId))) {
     throw new AppError(403, 'Premium subscription required');
   }
 

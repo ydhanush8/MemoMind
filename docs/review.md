@@ -7,16 +7,18 @@ Severity: **Critical** = exploitable / data leak / revenue loss · **High** = wr
 
 ## Summary
 
+**Fixed since review:** #1, #2, #3, #4, #5, #6, #8 (and the `/api/notifications/send` status check). #4 is handled by lazily re-checking Razorpay when the period ends; a webhook is still the long-term fix.
+
 | # | Severity | Area | Problem |
 |---|----------|------|---------|
-| 1 | Critical | Payments | Manual restore grants premium for any paid `sub_…` ID — no ownership check |
-| 2 | Critical | PWA / privacy | Service worker caches authenticated cross-origin API responses |
-| 3 | High | Payments | `verify` skips ownership check, trusts client `planType`, assumes `active` when Razorpay is unreachable |
-| 4 | High | Payments | Premium never expires — `currentPeriodEnd` ignored, no webhook |
-| 5 | High | Security | Cron endpoint unauthenticated unless `NODE_ENV=production` |
-| 6 | High | Privacy | React Query cache not cleared on sign-out; keys lack `userId` |
+| 1 | Critical (fixed) | Payments | Manual restore grants premium for any paid `sub_…` ID — no ownership check |
+| 2 | Critical (fixed) | PWA / privacy | Service worker caches authenticated cross-origin API responses |
+| 3 | High (fixed) | Payments | `verify` skips ownership check, trusts client `planType`, assumes `active` when Razorpay is unreachable |
+| 4 | High (fixed) | Payments | Premium never expires — `currentPeriodEnd` ignored, no webhook |
+| 5 | High (fixed) | Security | Cron endpoint unauthenticated unless `NODE_ENV=production` |
+| 6 | High (fixed) | Privacy | React Query cache not cleared on sign-out; keys lack `userId` |
 | 7 | High | Payments / UX | USD price toggle is display-only; user is charged the INR plan |
-| 8 | Medium | Ops | Two schedulers (Vercel cron + GitHub Actions) — duplicate reminders |
+| 8 | Medium (fixed) | Ops | Two schedulers (Vercel cron + GitHub Actions) — duplicate reminders |
 | 9 | Medium | Data | `autoIndex: false` — schema indexes (unique, TTL) never created by server |
 | 10 | Medium | Architecture | Dead backend still deployed inside `client/`; silent same-origin fallback |
 | 11 | Medium | UX | Query errors render as "library empty" / "all caught up" |

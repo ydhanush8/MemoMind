@@ -37,7 +37,7 @@ Determined by grepping imports across `client/`:
 | File(s) | Status | Evidence |
 | --- | --- | --- |
 | `app/api/**` (12 route files) | **Legacy fallback.** Not called when `NEXT_PUBLIC_API_URL` is set. | Every hook/page uses `apiFetch`, which targets `${NEXT_PUBLIC_API_URL}${path}`. The paths (`/api/notes`, …) are identical to the Express routes in `server/src/routes/*`, so the Next routes are only reached if `NEXT_PUBLIC_API_URL` is unset (then `apiFetch` falls back to same-origin relative URLs). |
-| `app/api/cron/daily-reminders/route.ts` + `vercel.json` | **Legacy / probably redundant.** | `vercel.json` still schedules this Next route at `30 3 * * *`. The real reminder trigger is now `.github/workflows/daily-reminder.yml`, which calls the Render-hosted Express backend. The Next route needs `MONGODB_URI`, `VAPID_*`, `CRON_SECRET` in the Vercel env, none of which are in `.env.local.example`, so on a frontend-only Vercel deploy it will return 401/500. If those vars *are* set, users could get duplicate reminders. |
+| `app/api/cron/daily-reminders/route.ts` | **Legacy, unscheduled.** | Nothing calls it any more (the Vercel cron was removed). Reminders are triggered by `.github/workflows/daily-reminder.yml`, which calls the Render-hosted Express backend. |
 | `app/lib/mongodb.ts`, `app/lib/models/*`, `app/lib/checkPremium.ts` | **Legacy.** | Imported only by `app/api/**` (and by each other). |
 | `app/lib/paymentLogger.ts` | **Legacy.** | Imported only by `app/api/subscription/{create,verify,restore}`. |
 | `app/lib/push.ts` | **Live.** | Client-side (`'use client'`); used by `NotificationPermission.tsx` and `dashboard/settings/page.tsx`. It calls the backend via `apiFetch`. |
@@ -368,7 +368,6 @@ Variables read only by legacy code (`app/api/**`, `app/lib/mongodb.ts`); not nee
 - **`tailwind.config.ts`**: token colour mapping, radius, elevation shadows, `8xl` max width, `xs` (480px) breakpoint, animations, `tailwindcss-animate`. `darkMode: ['selector', 'html:not(.light)']` (see section 5). The `accordion-*` keyframes reference Radix variables but nothing uses them.
 - **`postcss.config.js`**: Tailwind + Autoprefixer.
 - **`tsconfig.json`**: strict, bundler resolution, `@/*` maps to the `client/` root (so imports read `@/app/...`). Excludes `app/sw.ts`, which Serwist compiles separately.
-- **`vercel.json`**: one Vercel cron that calls the legacy `/api/cron/daily-reminders` at 03:30 UTC. Likely redundant now that GitHub Actions triggers the Express backend (see [Live vs legacy code](#live-vs-legacy-code)).
 - **`.env.local.example`**: the four frontend variables listed in section 6.
 - **`.eslintrc.json`**: `next/core-web-vitals`, `next/typescript`, `prettier`; Prettier issues are warnings.
 - **`.prettierrc`** / **`.prettierignore`**: single quotes, trailing commas, semicolons, width 100; ignores `.next`, `node_modules`, lockfile, `out`, `coverage`.
@@ -390,9 +389,9 @@ Variables read only by legacy code (`app/api/**`, `app/lib/mongodb.ts`); not nee
 ### `app/` (root)
 
 - **`layout.tsx`**: root layout. Loads Plus Jakarta Sans, sets metadata (manifest, icons, Apple web-app) and viewport (`viewportFit: cover`, theme colours). Wraps everything in a themed `ClerkProvider`, then `Providers` (TanStack Query), `ErrorBoundary`, plus global `InstallPWA`, `NotificationPermission` and `Toaster` styled with tokens. Contains the no-flash theme script.
-- **`providers.tsx`**: creates one `QueryClient` per browser session (`useState`) with the defaults listed in section 3.
+- **`providers.tsx`**: creates one `QueryClient` per browser session (`useState`) with the defaults listed in section 3. Calls `queryClient.clear()` whenever the Clerk `userId` changes (sign-out or account switch), because query keys are not user-scoped.
 - **`globals.css`**: token scopes, base styles (borders, selection, scrollbars), utilities, keyframes, a `prefers-reduced-motion` override, and Clerk `.cl-*` overrides.
-- **`sw.ts`**: Serwist service worker. Precaches `self.__SW_MANIFEST`, `skipWaiting`, `clientsClaim`, navigation preload, `defaultCache` runtime caching. Adds `push` (shows a notification from JSON `{title, body, icon, badge, url}`, ignoring malformed payloads) and `notificationclick` (focuses a tab already on the target path, otherwise opens a new window). No offline fallback is configured.
+- **`sw.ts`**: Serwist service worker. Precaches `self.__SW_MANIFEST`, `skipWaiting`, `clientsClaim`, navigation preload. Runtime caching puts a `NetworkOnly` rule for any `/api/` path before Serwist's `defaultCache`, so per-user API responses (same-origin or the cross-origin Express API) are never cached; an `activate` handler deletes the `cross-origin` and `apis` caches left by older versions. Adds `push` (shows a notification from JSON `{title, body, icon, badge, url}`, ignoring malformed payloads) and `notificationclick` (focuses a tab already on the target path, otherwise opens a new window). No offline fallback is configured.
 - **`page.tsx`**: marketing landing page (`WelcomePage`), about 800 lines, `.theme-paper`. framer-motion hero with parallax aurora blobs and `Typewriter`, a rotating `FloatingPreview` card of example analyses, steps, features and CTA sections. `SignedIn`/`SignedOut` switch CTAs between Clerk modals and a dashboard link. No data fetching.
 - **`pricing/page.tsx`**: pricing and checkout. INR/USD and monthly/yearly toggles (USD is display only). Loads the Razorpay script; upgrade/verify/restore flow as in 4.2, with manual `sub_...` restore and an error dialog. If already premium it shows a "You're on Pro" screen. Signed-out users get a Clerk `SignInButton` modal.
 - **`offline/page.tsx`**: "You're offline" message with a reload button. Protected by middleware and not used as a service-worker fallback.
@@ -478,7 +477,7 @@ Each mirrors an Express route with the same path and response shape. They use co
 - **`subscription/restore/route.ts`**: `POST {subscriptionId?}`. Finds a paid Razorpay subscription (manual id, then stored id, then notes `userId` match) and activates it.
 - **`notifications/subscribe/route.ts`**: `POST` upserts a device subscription; `GET` returns status/preferences; `PATCH` updates `preferredTime`/`enabled` for all the user's devices; `DELETE` removes one endpoint or all.
 - **`notifications/send/route.ts`**: `POST`. Sends a test push to the caller's own devices (premium only) and removes endpoints that return 404/410.
-- **`cron/daily-reminders/route.ts`**: `GET` (needs `CRON_SECRET` in production). Sends a reminder to premium users who reviewed fewer than 2 notes today, in batches of 50, and removes expired endpoints. Triggered by `vercel.json`.
+- **`cron/daily-reminders/route.ts`**: `GET` (needs `CRON_SECRET` in production). Sends a reminder to premium users who reviewed fewer than 2 notes today, in batches of 50, and removes expired endpoints. No longer scheduled.
 
 ---
 
@@ -516,5 +515,5 @@ Make sure the backend's CORS configuration allows the frontend origin (`http://l
 ### Deployment
 
 - The frontend deploys to **Vercel** as a standard Next.js app with `client/` as the project root. Set the four frontend variables in Vercel, and add the Vercel domain to Clerk's allowed origins and redirect URLs.
-- `vercel.json` registers a Vercel cron for the legacy `/api/cron/daily-reminders` route. Daily reminders are actually sent by the **Express backend on Render**, triggered by `.github/workflows/daily-reminder.yml` (`30 1 * * *` UTC, with a Bearer `CRON_SECRET`). Consider removing the Vercel cron (and eventually `app/api/**`, `app/lib/models/**`, `app/lib/mongodb.ts`, `app/lib/checkPremium.ts`, `app/lib/paymentLogger.ts`, and the `mongoose`/`razorpay` deps) once the Express backend is confirmed as the only backend.
+- Daily reminders are sent by the **Express backend on Render**, triggered by `.github/workflows/daily-reminder.yml` (`30 1 * * *` UTC, with a Bearer `CRON_SECRET`). There is no Vercel cron. Consider eventually removing `app/api/**`, `app/lib/models/**`, `app/lib/mongodb.ts`, `app/lib/checkPremium.ts`, `app/lib/paymentLogger.ts`, and the `mongoose`/`razorpay` deps once the Express backend is confirmed as the only backend.
 - The generated `public/sw.js` and `workbox-*.js` are gitignored and produced on every build.

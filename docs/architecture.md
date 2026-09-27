@@ -90,7 +90,6 @@ flowchart TB
     subgraph vercelp["Vercel project — root: client/"]
         build1["next build + Serwist<br/>emits public/sw.js"]
         cdn["Edge / CDN"]
-        vcron["vercel.json cron 30 3 * * *<br/>LEGACY — hits Next route"]
     end
 
     subgraph renderp["Render service — root: server/"]
@@ -104,12 +103,11 @@ flowchart TB
     src --> docker --> proc
     wf -- "curl" --> proc
     proc --> atlas
-    vcron -. "duplicate scheduler, see review #8" .-> cdn
 ```
 
 | Piece | Host | Config source |
 |-------|------|---------------|
-| Frontend | Vercel | `client/next.config.mjs`, `client/vercel.json`, Vercel env |
+| Frontend | Vercel | `client/next.config.mjs`, Vercel env |
 | Backend | Render (`memomind-zqw3.onrender.com`) | `server/Dockerfile`, Render env (no `render.yaml` in repo) |
 | Scheduler | GitHub Actions | `.github/workflows/daily-reminder.yml`, secret `CRON_SECRET` |
 | Database | MongoDB Atlas | `MONGODB_URI` (server only) |
@@ -341,7 +339,5 @@ sequenceDiagram
 The full list is in [review.md](review.md). The structural items are:
 
 1. **Legacy backend in `client/app/api/**`** is still built and deployed. `apiFetch` silently falls back to it when `NEXT_PUBLIC_API_URL` is unset.
-2. **Two schedulers:** `client/vercel.json` cron and GitHub Actions.
-3. **No Razorpay webhook**, so subscription state never changes after activation and premium never expires.
-4. **Service worker caches cross-origin API responses** without regard to which user is signed in.
-5. **Single-instance assumptions:** the in-memory rate limiter works per instance, and indexes are not auto-built.
+2. **No Razorpay webhook.** Premium status is refreshed lazily from Razorpay when the stored period ends, so cancellations are only noticed at the next check after the period ends.
+3. **Single-instance assumptions:** the in-memory rate limiter works per instance, and indexes are not auto-built.
