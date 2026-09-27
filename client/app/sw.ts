@@ -2,7 +2,7 @@
 
 import { defaultCache } from '@serwist/next/worker';
 import type { PrecacheEntry, SerwistGlobalConfig } from 'serwist';
-import { Serwist } from 'serwist';
+import { NetworkOnly, Serwist } from 'serwist';
 
 declare global {
   interface ServiceWorkerGlobalScope extends SerwistGlobalConfig {
@@ -17,7 +17,17 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
-  runtimeCaching: defaultCache,
+  runtimeCaching: [
+    // API responses are per-user (Bearer auth) — never cache them. Must precede
+    // defaultCache, whose catch-all "cross-origin" rule would cache the Express API.
+    { matcher: ({ url }) => url.pathname.startsWith('/api/'), handler: new NetworkOnly() },
+    ...defaultCache,
+  ],
+});
+
+// Purge API responses cached by earlier service-worker versions.
+self.addEventListener('activate', (event) => {
+  event.waitUntil(Promise.all([caches.delete('cross-origin'), caches.delete('apis')]));
 });
 
 serwist.addEventListeners();

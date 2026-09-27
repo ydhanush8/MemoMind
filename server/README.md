@@ -16,7 +16,6 @@ src/
   routes/        endpoint definitions
   middlewares/   auth, error, validation, logger, rateLimit
   validators/    request validation (exact original messages)
-  jobs/          node-cron daily reminder
   utils/         logger, response, constants, date, encryption, appError, asyncHandler
   types/         shared interfaces
   app.ts         express app (helmet, cors, compression, clerk, routes)
@@ -51,7 +50,7 @@ Renamed (the `NEXT_PUBLIC_` prefix is Next.js-specific and doesn't apply here):
 | `NEXT_PUBLIC_APP_URL`               | `APP_URL` (OpenRouter referer) | ✅   |
 
 Server-only extras: `PORT`, `NODE_ENV`, `CORS_ORIGINS` (comma-separated allowed
-frontend origins), `ENABLE_CRON`.
+frontend origins).
 
 ## Endpoints (paths unchanged)
 
@@ -69,7 +68,7 @@ frontend origins), `ENABLE_CRON`.
 | GET                  | `/api/subscription/status`    | Clerk             |
 | GET,POST,PATCH,DELETE| `/api/notifications/subscribe`| Clerk             |
 | POST                 | `/api/notifications/send`     | Clerk + premium   |
-| GET                  | `/api/cron/daily-reminders`   | `CRON_SECRET` (prod) |
+| GET                  | `/api/cron/daily-reminders`   | `CRON_SECRET`     |
 
 ## Authentication (cross-origin)
 
@@ -112,9 +111,10 @@ pricing page. Paths and response handling stay the same.
 
 ## Cron
 
-`node-cron` runs the daily reminder at `30 3 * * *` UTC (= 9:00 AM IST),
-identical to the old `vercel.json`. The protected HTTP endpoint remains for
-manual/external triggers. Toggle in-process scheduling with `ENABLE_CRON`.
+There is no in-process scheduler. GitHub Actions
+(`.github/workflows/daily-reminder.yml`, `30 1 * * *` UTC) calls
+`GET /api/cron/daily-reminders` with `Authorization: Bearer <CRON_SECRET>`.
+The same `CRON_SECRET` must be set on Render and as a GitHub repo secret.
 
 ## Deploy
 
@@ -126,5 +126,5 @@ docker run -p 4000:4000 --env-file .env memomind-server
 ```
 
 Set `CORS_ORIGINS` to your deployed frontend origin, provide all env vars, and
-(for scheduled reminders) set `CRON_SECRET` + `ENABLE_CRON=true`. Includes a
+(for scheduled reminders) set `CRON_SECRET` to match the GitHub Actions secret. Includes a
 health endpoint, env validation on boot, and graceful shutdown.

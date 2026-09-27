@@ -22,7 +22,8 @@ type PaymentEvent =
   | 'subscription.restore.not_found'
   | 'subscription.restore.success'
   | 'subscription.restore.failure'
-  | 'subscription.status.expired';
+  | 'subscription.status.expired'
+  | 'subscription.ownership_mismatch';
 
 export function logPayment(event: PaymentEvent, payload: Record<string, unknown> = {}): void {
   const safe = { ...payload };

@@ -1,4 +1,5 @@
-import Subscription from '../models/Subscription.js';
+import type { HydratedDocument } from 'mongoose';
+import Subscription, { type ISubscription } from '../models/Subscription.js';
 import { AppError } from '../utils/appError.js';
 import { addMonths, addYears } from '../utils/date.js';
 import {
@@ -19,12 +20,51 @@ import {
 } from './payment.service.js';
 import type { RzpSubscription, VerifyPaymentInput } from '../types/subscription.types.js';
 
+/**
+ * Premium = plan premium, status active and inside the paid period. There is no
+ * Razorpay webhook, so renewals don't move currentPeriodEnd forward on their own:
+ * once the stored period has passed, re-fetch the subscription from Razorpay and
+ * either extend the period or mark it expired.
+ */
+async function checkPremium(sub: HydratedDocument<ISubscription> | null): Promise<boolean> {
+  if (sub?.plan !== 'premium' || sub.status !== 'active') return false;
+  // Manually granted premium (no Razorpay link, no period) never expires.
+  if (!sub.currentPeriodEnd && !sub.razorpaySubscriptionId) return true;
+  if (sub.currentPeriodEnd && sub.currentPeriodEnd > new Date()) return true;
+
+  if (sub.razorpaySubscriptionId && hasRazorpayCredentials()) {
+    let rzpSub: RzpSubscription;
+    try {
+      rzpSub = await fetchRazorpaySubscription(sub.razorpaySubscriptionId);
+    } catch {
+      // ponytail: Razorpay outage keeps lapsed users premium until the next check; a webhook removes the need for this.
+      return true;
+    }
+    const periodEnd = rzpSub.current_end ? new Date(rzpSub.current_end * 1000) : null;
+    if (
+      RAZORPAY_PAID_STATUSES.includes(rzpSub.status as never) &&
+      (!periodEnd || periodEnd > new Date())
+    ) {
+      if (periodEnd) {
+        if (rzpSub.current_start) sub.currentPeriodStart = new Date(rzpSub.current_start * 1000);
+        sub.currentPeriodEnd = periodEnd;
+        await sub.save();
+      }
+      return true;
+    }
+  }
+
+  sub.status = 'expired';
+  await sub.save();
+  logPayment('subscription.status.expired', {
+    userId: sub.userId,
+    razorpaySubscriptionId: sub.razorpaySubscriptionId,
+  });
+  return false;
+}
+
 export async function isUserPremium(userId: string): Promise<boolean> {
-  const sub = (await Subscription.findOne({ userId }, { plan: 1, status: 1 }).lean()) as {
-    plan?: string;
-    status?: string;
-  } | null;
-  return sub?.plan === 'premium' && sub?.status === 'active';
+  return checkPremium(await Subscription.findOne({ userId }));
 }
 
 export async function getStatus(userId: string) {
@@ -33,7 +73,7 @@ export async function getStatus(userId: string) {
     if (!subscription) {
       subscription = await Subscription.create({ userId, plan: 'free', status: 'active' });
     }
-    const isPremium = subscription.plan === 'premium' && subscription.status === 'active';
+    const isPremium = await checkPremium(subscription);
     return {
       isPremium,
       plan: subscription.plan,
@@ -121,7 +161,7 @@ export async function verifyPayment(userId: string, input: VerifyPaymentInput) {
     throw new AppError(400, 'Invalid payment signature');
   }
 
-  // 2. Cross-verify with Razorpay API (don't block activation if the API is down)
+  // 2. Cross-verify with Razorpay API. Never activate on the signature alone.
   let rzpSubscription: RzpSubscription;
   try {
     rzpSubscription = await fetchRazorpaySubscription(razorpay_subscription_id);
@@ -131,7 +171,11 @@ export async function verifyPayment(userId: string, input: VerifyPaymentInput) {
       razorpaySubscriptionId: razorpay_subscription_id,
       error: 'Razorpay API fetch failed',
     });
-    rzpSubscription = { id: razorpay_subscription_id, status: 'active' };
+    throw new AppError(
+      502,
+      'Payment received but we could not confirm it with Razorpay. Please use Restore Subscription on the pricing page in a few minutes.',
+      { recoverable: true },
+    );
   }
 
   if (!RAZORPAY_VALID_VERIFY_STATUSES.includes(rzpSubscription.status as never)) {
@@ -163,37 +207,12 @@ export async function verifyPayment(userId: string, input: VerifyPaymentInput) {
     return { success: true, message: 'Subscription already active' };
   }
 
-  // 4. Derive period dates — prefer Razorpay's own dates
-  const currentPeriodStart = rzpSubscription.current_start
-    ? new Date(rzpSubscription.current_start * 1000)
-    : new Date();
-  const rzpPeriodEnd = rzpSubscription.current_end
-    ? new Date(rzpSubscription.current_end * 1000)
-    : null;
-  const nowForPeriod = new Date();
-  const currentPeriodEnd =
-    rzpPeriodEnd && rzpPeriodEnd > nowForPeriod
-      ? rzpPeriodEnd
-      : planType === 'yearly'
-        ? addYears(new Date(), 1)
-        : addMonths(new Date(), 1);
-
-  // 5. Idempotent upsert
+  // 4. Activate — plan type comes from Razorpay, not the client
+  let activated: Awaited<ReturnType<typeof activateSubscription>>;
   try {
-    await Subscription.findOneAndUpdate(
-      { userId },
-      {
-        userId,
-        plan: 'premium',
-        planType,
-        status: 'active',
-        razorpaySubscriptionId: razorpay_subscription_id,
-        currentPeriodStart,
-        currentPeriodEnd,
-      },
-      { upsert: true, new: true },
-    );
+    activated = await activateSubscription(userId, rzpSubscription, existing?.pendingPlanType);
   } catch (err) {
+    if (err instanceof AppError) throw err;
     logPayment('subscription.verify.db_failure', {
       userId,
       razorpaySubscriptionId: razorpay_subscription_id,
@@ -208,9 +227,9 @@ export async function verifyPayment(userId: string, input: VerifyPaymentInput) {
 
   logPayment('subscription.verify.success', {
     userId,
-    planType,
+    planType: activated.planType,
     razorpaySubscriptionId: razorpay_subscription_id,
-    currentPeriodEnd: currentPeriodEnd.toISOString(),
+    currentPeriodEnd: activated.currentPeriodEnd.toISOString(),
   });
 
   return { success: true, message: 'Subscription activated!' };
@@ -221,6 +240,21 @@ async function activateSubscription(
   rzpSub: RzpSubscription,
   pendingPlanType?: string,
 ) {
+  // Subscriptions are always created with notes.userId, so this binds a payment to its buyer.
+  if (rzpSub.notes?.userId !== userId) {
+    logPayment('subscription.ownership_mismatch', { userId, razorpaySubscriptionId: rzpSub.id });
+    throw new AppError(403, 'This subscription belongs to a different account.');
+  }
+  const linkedElsewhere = await Subscription.exists({
+    razorpaySubscriptionId: rzpSub.id,
+    userId: { $ne: userId },
+    plan: 'premium',
+  });
+  if (linkedElsewhere) {
+    logPayment('subscription.ownership_mismatch', { userId, razorpaySubscriptionId: rzpSub.id });
+    throw new AppError(409, 'This subscription is already linked to another account.');
+  }
+
   const planType: PlanType =
     rzpSub.plan_id === getPlanId('yearly')
       ? 'yearly'
